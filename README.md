@@ -1,2 +1,2 @@
 # tereptan
-oktatást egítő vizualizáció
+oktatást segítő vizualizáció
