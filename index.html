@@ -2,22 +2,29 @@
 <html lang="hu">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tereptan & Térképészet Laboratórium — v3</title>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Tereptan & Térképészet Laboratórium</title>
+  
+  <!-- Leaflet CSS & JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <!-- MGRS.js Library & Proj4 -->
   <script src="https://cdn.jsdelivr.net/npm/mgrs@1.0.0/dist/mgrs.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
+  
+  <!-- FontAwesome Icons & Google Fonts -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      --bg-main: #0c1017;
-      --bg-panel: #161e2e;
-      --bg-card: #1f2b40;
-      --border-color: #2b3a55;
+      --bg-main: #0a0e14;
+      --bg-panel: #131b26;
+      --bg-card: #1a2433;
+      --border-color: #2b3a4f;
       --accent-cyan: #00e5ff;
       --accent-green: #10b981;
       --accent-amber: #f59e0b;
@@ -25,562 +32,602 @@
       --accent-blue: #3b82f6;
       --text-main: #f1f5f9;
       --text-muted: #94a3b8;
+      --nav-height: 60px;
+      --header-height: 54px;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-    body {
+    html, body {
+      width: 100%; height: 100%; overflow: hidden;
       font-family: 'Inter', sans-serif;
       background-color: var(--bg-main);
       color: var(--text-main);
-      display: flex; flex-direction: column; height: 100vh; overflow: hidden;
     }
 
+    /* FEJLÉC */
     header {
-      background-color: var(--bg-panel); border-bottom: 1px solid var(--border-color);
-      padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; z-index: 100;
+      height: var(--header-height);
+      background-color: var(--bg-panel);
+      border-bottom: 1px solid var(--border-color);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 16px; z-index: 1000;
     }
+
     .brand { display: flex; align-items: center; gap: 12px; }
     .brand-icon {
       background: linear-gradient(135deg, #0284c7, var(--accent-cyan));
-      width: 40px; height: 40px; border-radius: 8px;
-      display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: #000;
+      width: 36px; height: 36px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; color: #000;
     }
-    .brand-text h1 { font-family: 'Chakra Petch', sans-serif; font-size: 1.2rem; letter-spacing: 0.5px; color: #fff; }
-    .brand-text p { font-size: 0.75rem; color: var(--text-muted); }
+    .brand-text h1 { font-family: 'Chakra Petch', sans-serif; font-size: 1.05rem; letter-spacing: 0.5px; color: #fff; line-height: 1.1; }
+    .brand-text p { font-size: 0.7rem; color: var(--text-muted); }
+
+    /* ASZTALI MENÜ (Mobilon rejtve) */
+    .desktop-nav { display: none; gap: 8px; height: 100%; }
+    .d-nav-btn {
+      background: none; border: none; color: var(--text-muted);
+      padding: 0 16px; font-size: 0.85rem; font-weight: 600;
+      display: flex; align-items: center; gap: 8px; cursor: pointer;
+      border-bottom: 3px solid transparent; transition: all 0.2s;
+    }
+    .d-nav-btn:hover { color: #fff; }
+    .d-nav-btn.active {
+      color: var(--accent-cyan);
+      border-bottom-color: var(--accent-cyan);
+      background: rgba(0, 229, 255, 0.05);
+    }
+
     .badge-mil {
       background: rgba(16, 185, 129, 0.15); border: 1px solid var(--accent-green);
       color: var(--accent-green); font-family: 'JetBrains Mono', monospace;
-      padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;
+      padding: 4px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 700;
+      display: flex; align-items: center; gap: 6px;
     }
 
-    .tab-nav {
-      background-color: var(--bg-panel); display: flex;
-      border-bottom: 1px solid var(--border-color); overflow-x: auto; scrollbar-width: none;
+    /* FŐ KONTÉNER */
+    main {
+      height: calc(100% - var(--header-height) - var(--nav-height));
+      width: 100%; position: relative; overflow: hidden;
     }
-    .tab-nav::-webkit-scrollbar { display: none; }
-    .tab-btn {
-      flex: 1; min-width: 130px; background: none; border: none;
-      color: var(--text-muted); padding: 12px 14px; font-size: 0.85rem; font-weight: 600;
-      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
-      border-bottom: 3px solid transparent; transition: all 0.2s; white-space: nowrap;
+    .tab-content {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      display: none; flex-direction: column; overflow-y: auto; -webkit-overflow-scrolling: touch;
     }
-    .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.03); }
-    .tab-btn.active { color: var(--accent-cyan); border-bottom-color: var(--accent-cyan); background: rgba(0,229,255,0.05); }
+    .tab-content.active { display: flex; }
 
-    main { flex: 1; position: relative; overflow: hidden; }
-    .tab-content { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; overflow-y: auto; }
-    .tab-content.active { display: flex; flex-direction: column; }
-    #tab-map { flex-direction: row; }
-    #map { flex: 1; height: 100%; background: #0f172a; }
+    /* MOBIL ALSÓ SÁV */
+    .mobile-nav {
+      height: var(--nav-height);
+      background-color: var(--bg-panel);
+      border-top: 1px solid var(--border-color);
+      display: flex; justify-content: space-around; align-items: center;
+      padding: 0 4px; padding-bottom: env(safe-area-inset-bottom);
+      z-index: 1000;
+    }
+    .nav-item {
+      flex: 1; height: 100%; background: none; border: none;
+      color: var(--text-muted); display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 3px;
+      font-size: 0.65rem; font-weight: 600; cursor: pointer;
+    }
+    .nav-item i { font-size: 1.15rem; }
+    .nav-item.active { color: var(--accent-cyan); }
 
-    .map-sidebar {
-      width: 460px; background-color: var(--bg-panel);
-      border-left: 1px solid var(--border-color); display: flex; flex-direction: column;
-      overflow-y: auto; padding: 16px; gap: 16px;
+    /* 1. TÉRKÉP MODUL */
+    #tab-map { overflow: hidden; }
+    .map-container {
+      width: 100%; height: 46vh; min-height: 240px; position: relative;
+      border-bottom: 2px solid var(--border-color);
+    }
+    #map { width: 100%; height: 100%; }
+    .map-data-scroll {
+      flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px;
+      background: var(--bg-main);
     }
 
-    .section-card { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px; }
-    .section-title {
-      font-family: 'Chakra Petch', sans-serif; font-size: 0.9rem; color: var(--accent-cyan);
-      margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;
-      text-transform: uppercase; letter-spacing: 0.5px;
+    /* KÁRTYÁK & DEKÓDER */
+    .m-card {
+      background-color: var(--bg-card); border: 1px solid var(--border-color);
+      border-radius: 8px; padding: 14px;
+    }
+    .m-card-title {
+      font-family: 'Chakra Petch', sans-serif; font-size: 0.85rem; color: var(--accent-cyan);
+      text-transform: uppercase; letter-spacing: 0.5px; display: flex;
+      align-items: center; justify-content: space-between; margin-bottom: 10px;
     }
 
-    /* Dekóder */
-    .decoder-container { display: flex; flex-direction: column; gap: 8px; }
     .decoder-strip {
-      display: flex; border-radius: 8px; overflow: hidden;
-      font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 1.15rem; text-align: center;
-      border: 1px solid rgba(255,255,255,0.1);
+      display: flex; border-radius: 6px; overflow: hidden;
+      font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 1rem;
+      text-align: center; border: 1px solid rgba(255, 255, 255, 0.12);
     }
-    .dec-part { padding: 8px 4px; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: 0.2s; }
-    .dec-zone { background: rgba(59,130,246,0.25); color: #60a5fa; flex: 2; border-right: 1px solid var(--border-color); }
-    .dec-sq { background: rgba(16,185,129,0.25); color: #34d399; flex: 2; border-right: 1px solid var(--border-color); }
-    .dec-east { background: rgba(245,158,11,0.25); color: #fbbf24; flex: 3; border-right: 1px solid var(--border-color); }
-    .dec-north { background: rgba(239,68,68,0.25); color: #f87171; flex: 3; }
-    .dec-label { font-size: 0.6rem; font-weight: 400; text-transform: uppercase; margin-top: 2px; opacity: 0.8; font-family: 'Inter', sans-serif; }
+    .dec-part { padding: 8px 4px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+    .dec-zone { background: rgba(59, 130, 246, 0.25); color: #60a5fa; flex: 2; border-right: 1px solid var(--border-color); }
+    .dec-sq { background: rgba(16, 185, 129, 0.25); color: #34d399; flex: 2; border-right: 1px solid var(--border-color); }
+    .dec-east { background: rgba(245, 158, 11, 0.25); color: #fbbf24; flex: 3; border-right: 1px solid var(--border-color); }
+    .dec-north { background: rgba(239, 68, 68, 0.25); color: #f87171; flex: 3; }
+    .dec-label { font-size: 0.58rem; font-weight: 500; text-transform: uppercase; margin-top: 2px; font-family: 'Inter', sans-serif; }
 
-    /* Pontossági lépcsők */
-    .precision-ladder { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
-    .prec-step {
-      display: flex; justify-content: space-between; align-items: center;
-      background: rgba(0,0,0,0.2); padding: 6px 10px; border-radius: 6px;
-      font-size: 0.8rem; border: 1px solid transparent; transition: 0.2s;
-    }
-    .prec-step.active { border-color: var(--accent-cyan); background: rgba(0,229,255,0.08); }
-    .prec-badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.1); font-weight: 600; }
-    .prec-code { font-family: 'JetBrains Mono', monospace; letter-spacing: 0.5px; }
-
-    /* Rádió */
+    /* RÁDIÓ SZIMULÁTOR */
     .radio-panel {
-      background: linear-gradient(135deg, rgba(15,23,42,0.9), rgba(30,41,59,0.9));
-      border: 1px solid var(--border-color); border-radius: 10px; padding: 14px;
+      background: linear-gradient(135deg, rgba(15,23,42,0.95), rgba(30,41,59,0.9));
+      border: 1px solid var(--border-color); border-radius: 8px; padding: 12px;
     }
-    .radio-title { display: flex; align-items: center; gap: 8px; font-family: 'Chakra Petch', sans-serif; color: var(--accent-amber); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
-    .radio-variant { background: rgba(0,0,0,0.35); border-radius: 8px; padding: 10px; margin-bottom: 8px; border-left: 3px solid var(--accent-red); }
+    .radio-title {
+      display: flex; align-items: center; gap: 8px; font-family: 'Chakra Petch', sans-serif;
+      color: var(--accent-amber); font-size: 0.85rem; text-transform: uppercase; margin-bottom: 8px;
+    }
+    .radio-variant {
+      background: rgba(0,0,0,0.35); border-radius: 6px; padding: 8px 10px; margin-bottom: 8px;
+      border-left: 3px solid var(--accent-red);
+    }
     .radio-variant.good { border-left-color: var(--accent-green); }
-    .radio-variant-label { display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
-    .radio-variant-label strong { color: #fff; font-size: 0.75rem; }
-    .radio-text { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: #fff; line-height: 1.5; word-break: break-word; }
-    .radio-text.spoken { color: #cbd5e1; font-size: 0.78rem; margin-top: 4px; font-style: italic; }
-    .radio-meta { display: flex; gap: 10px; flex-wrap: wrap; font-size: 0.7rem; color: var(--text-muted); margin-top: 6px; }
+    .radio-variant-label { display: flex; justify-content: space-between; font-size: 0.68rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
+    .radio-variant-label strong { color: #fff; }
+    .radio-text { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: #fff; word-break: break-all; }
+    .radio-text.spoken { color: #94a3b8; font-size: 0.74rem; margin-top: 3px; font-style: italic; }
+    .radio-meta { display: flex; gap: 10px; font-size: 0.68rem; color: var(--text-muted); margin-top: 4px; }
     .radio-meta span strong { color: var(--accent-cyan); }
     .radio-actions { display: flex; gap: 8px; margin-top: 10px; }
     .btn-radio {
       flex: 1; background: rgba(0,229,255,0.1); border: 1px solid var(--accent-cyan); color: var(--accent-cyan);
-      padding: 8px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer;
-      display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s;
+      padding: 8px; border-radius: 6px; font-size: 0.74rem; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
     }
-    .btn-radio:hover { background: var(--accent-cyan); color: #000; }
     .btn-radio.playing { background: var(--accent-amber); border-color: var(--accent-amber); color: #000; }
 
-    .hint-text { font-size: 0.72rem; color: var(--text-muted); margin-top: 8px; line-height: 1.4; }
-    .hint-text i { color: var(--accent-amber); margin-right: 4px; }
-
-    /* Koordináta */
-    .coord-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
-    .coord-box { background: rgba(0,0,0,0.3); padding: 8px 10px; border-radius: 6px; border-left: 3px solid var(--accent-cyan); }
-    .coord-box-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
-    .coord-box-val { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #fff; font-weight: 600; margin-top: 2px; }
-    .preset-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-    .btn-preset {
-      background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-main);
-      padding: 6px 10px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; transition: all 0.2s;
+    /* PONTOSSÁGI LÉPCSŐK */
+    .precision-ladder { display: flex; flex-direction: column; gap: 6px; }
+    .prec-step {
+      display: flex; justify-content: space-between; align-items: center;
+      background: rgba(0,0,0,0.25); padding: 6px 10px; border-radius: 5px; font-size: 0.78rem;
     }
-    .btn-preset:hover { background: rgba(0,229,255,0.15); border-color: var(--accent-cyan); color: #fff; }
+    .prec-step.active { border: 1px solid var(--accent-cyan); background: rgba(0,229,255,0.08); }
+    .prec-badge { font-size: 0.68rem; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.1); font-weight: 600; }
+    .prec-code { font-family: 'JetBrains Mono', monospace; }
 
-    /* Távcső */
-    #tab-reticle { flex-direction: row; background-color: #080d14; }
-    .reticle-view { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; padding: 20px; }
-    .scope-frame {
-      width: 520px; height: 520px; max-width: 90vw; max-height: 90vw;
-      position: relative; border-radius: 50%; box-shadow: 0 0 0 1000px #080d14, 0 0 40px rgba(0,0,0,0.9);
-      overflow: hidden; border: 6px solid #1f2937;
+    /* KOORDINÁTA MEZŐK & GYORSGOMBOK */
+    .coord-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .coord-item { background: rgba(0, 0, 0, 0.25); padding: 8px 10px; border-radius: 6px; border-left: 3px solid var(--accent-cyan); }
+    .coord-item-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; }
+    .coord-item-val { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: #fff; font-weight: 700; margin-top: 2px; }
+
+    .chip-scroll { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+    .chip-scroll::-webkit-scrollbar { display: none; }
+    .chip-btn {
+      background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: #cbd5e1;
+      padding: 8px 12px; border-radius: 20px; font-size: 0.75rem; white-space: nowrap; cursor: pointer;
     }
-    #reticle-canvas { width: 100%; height: 100%; cursor: grab; touch-action: none; }
-    .reticle-controls { width: 420px; background-color: var(--bg-panel); border-left: 1px solid var(--border-color); display: flex; flex-direction: column; overflow-y: auto; padding: 16px; gap: 16px; }
-    .control-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
-    .control-group label { font-size: 0.8rem; color: var(--text-muted); display: flex; justify-content: space-between; }
-    input[type=range] { width: 100%; accent-color: var(--accent-cyan); }
-    .target-selector { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-    .btn-target {
-      background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-main);
-      padding: 8px 10px; border-radius: 6px; font-size: 0.8rem; cursor: pointer;
-      display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all 0.2s;
-    }
-    .btn-target.active { border-color: var(--accent-amber); background: rgba(245,158,11,0.15); color: #fff; }
-    .target-size-tag { font-size: 0.7rem; color: var(--accent-amber); font-family: 'JetBrains Mono', monospace; }
-    .formula-card { background: rgba(0,229,255,0.05); border: 1px solid rgba(0,229,255,0.2); border-radius: 8px; padding: 12px; margin-top: 8px; }
-    .formula-math { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; color: var(--accent-cyan); text-align: center; margin: 6px 0; }
-    .system-toggle { display: flex; background: rgba(0,0,0,0.4); border-radius: 6px; padding: 3px; border: 1px solid var(--border-color); }
-    .sys-btn { flex: 1; padding: 6px; border: none; background: none; color: var(--text-muted); font-size: 0.75rem; font-weight: 600; border-radius: 4px; cursor: pointer; transition: 0.2s; }
-    .sys-btn.active { background: var(--accent-blue); color: #fff; }
+    .chip-btn:hover, .chip-btn:active { background: rgba(0, 229, 255, 0.2); border-color: var(--accent-cyan); color: #fff; }
 
-    /* Elmélet */
-    #tab-theory { padding: 24px; background-color: var(--bg-main); align-items: center; }
-    .theory-wrap { max-width: 900px; width: 100%; display: flex; flex-direction: column; gap: 24px; padding-bottom: 60px; }
-    .theory-hero { background: linear-gradient(135deg, rgba(30,41,59,0.8), rgba(15,23,42,0.9)); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; }
-    .theory-hero h2 { font-family: 'Chakra Petch', sans-serif; font-size: 1.5rem; color: #fff; margin-bottom: 8px; }
-    .theory-hero p { color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; }
-    .anim-box { background: #090e17; border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
-    #proj-canvas { width: 100%; max-width: 650px; height: 280px; border-radius: 8px; background: #020617; }
-    .anim-controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
-    .btn-anim { background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); color: #fff; padding: 8px 14px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
-    .btn-anim:hover, .btn-anim.active { background: var(--accent-cyan); color: #000; font-weight: 600; }
-    #anim-explanation { font-size: 0.85rem; color: var(--accent-cyan); text-align: center; min-height: 36px; }
-    .info-card { background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 10px; padding: 20px; }
-    .info-card h3 { font-family: 'Chakra Petch', sans-serif; font-size: 1.15rem; color: var(--accent-cyan); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
-    .info-card p, .info-card li { font-size: 0.9rem; line-height: 1.7; color: #cbd5e1; }
-    .info-card ul { padding-left: 20px; margin-top: 8px; margin-bottom: 8px; }
-    .callout { background: rgba(245,158,11,0.08); border-left: 4px solid var(--accent-amber); padding: 12px 14px; border-radius: 0 6px 6px 0; margin-top: 14px; font-size: 0.85rem; }
-
-    /* Kvíz */
-    #tab-quiz { padding: 24px; background-color: var(--bg-main); align-items: center; }
-    .quiz-wrap { max-width: 800px; width: 100%; display: flex; flex-direction: column; gap: 20px; padding-bottom: 60px; }
-    .quiz-question-card { background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
-    .q-badge { display: inline-block; align-self: flex-start; background: rgba(59,130,246,0.2); color: #60a5fa; font-size: 0.75rem; font-weight: 600; padding: 3px 8px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; }
-    .q-text { font-size: 1rem; font-weight: 500; color: #fff; }
-    .q-options { display: flex; flex-direction: column; gap: 8px; }
-    .q-opt { background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px 14px; font-size: 0.88rem; color: #cbd5e1; cursor: pointer; text-align: left; transition: all 0.2s; }
-    .q-opt:hover { background: rgba(255,255,255,0.08); border-color: #475569; }
-    .q-opt.correct { background: rgba(16,185,129,0.2) !important; border-color: var(--accent-green) !important; color: #34d399 !important; }
-    .q-opt.wrong { background: rgba(239,68,68,0.2) !important; border-color: var(--accent-red) !important; color: #f87171 !important; }
-    .q-explanation { display: none; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; font-size: 0.85rem; color: #94a3b8; border-left: 3px solid var(--accent-cyan); }
-
-    @media (max-width: 900px) {
-      #tab-map, #tab-reticle { flex-direction: column; }
-      .map-sidebar, .reticle-controls { width: 100%; border-left: none; border-top: 1px solid var(--border-color); max-height: 50vh; }
-      .scope-frame { width: 320px; height: 320px; }
-      #map { min-height: 50vh; }
-    }
-
-    /* Térképi rács feliratok */
     .utm-label {
-      background: rgba(15, 23, 42, 0.75);
-      border: 1px solid rgba(16, 185, 129, 0.6);
-      color: #34d399;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      font-weight: 700;
-      padding: 1px 5px;
-      border-radius: 3px;
-      white-space: nowrap;
-      pointer-events: none;
+      background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(16, 185, 129, 0.8);
+      color: #34d399; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+      padding: 2px 6px; border-radius: 4px; white-space: nowrap; pointer-events: none;
+    }
+
+    /* 2. TÁVCSŐ SZIMULÁTOR */
+    .reticle-screen {
+      padding: 16px; display: flex; flex-direction: column; gap: 16px;
+      max-width: 650px; margin: 0 auto; width: 100%;
+    }
+    .scope-box {
+      width: 100%; max-width: 380px; aspect-ratio: 1 / 1; margin: 0 auto;
+      border-radius: 50%; overflow: hidden; border: 6px solid #202b3c;
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.8); position: relative; touch-action: none;
+    }
+    #reticle-canvas { width: 100%; height: 100%; display: block; }
+    .target-chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .btn-target-m {
+      background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: #cbd5e1;
+      padding: 10px 4px; border-radius: 6px; font-size: 0.75rem; display: flex; flex-direction: column;
+      align-items: center; gap: 4px; cursor: pointer;
+    }
+    .btn-target-m.active { background: rgba(245, 158, 11, 0.18); border-color: var(--accent-amber); color: #fff; }
+    .range-wrap { display: flex; flex-direction: column; gap: 6px; }
+    .range-label { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); }
+    input[type=range] { width: 100%; height: 30px; accent-color: var(--accent-cyan); }
+    .formula-banner {
+      background: rgba(0, 229, 255, 0.06); border: 1px solid rgba(0, 229, 255, 0.25);
+      border-radius: 6px; padding: 12px; text-align: center;
+    }
+    .formula-math { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; color: var(--accent-cyan); font-weight: 700; margin-top: 4px; }
+
+    /* 3. ELMÉLET & VETÜLET */
+    .theory-screen {
+      padding: 16px; display: flex; flex-direction: column; gap: 16px;
+      max-width: 800px; margin: 0 auto; width: 100%; padding-bottom: 40px;
+    }
+    .p-canvas-box {
+      width: 100%; aspect-ratio: 16 / 9; background: #04070d;
+      border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden;
+    }
+    #proj-canvas { width: 100%; height: 100%; }
+    .anim-btn-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .btn-anim-m {
+      background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: #fff;
+      padding: 10px 8px; border-radius: 6px; font-size: 0.78rem; cursor: pointer; text-align: center;
+    }
+    .btn-anim-m.active { background: var(--accent-cyan); color: #000; font-weight: 700; }
+
+    /* 4. KVÍZ */
+    .quiz-screen {
+      padding: 16px; display: flex; flex-direction: column; gap: 14px;
+      max-width: 700px; margin: 0 auto; width: 100%; padding-bottom: 50px;
+    }
+    .q-opt-m {
+      background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border-color); border-radius: 6px;
+      padding: 12px; font-size: 0.85rem; color: #e2e8f0; text-align: left; cursor: pointer;
+    }
+    .q-opt-m.correct { background: rgba(16, 185, 129, 0.25) !important; border-color: var(--accent-green) !important; color: #34d399 !important; }
+    .q-opt-m.wrong { background: rgba(239, 68, 68, 0.25) !important; border-color: var(--accent-red) !important; color: #f87171 !important; }
+    .q-exp-m {
+      display: none; background: rgba(0, 0, 0, 0.35); padding: 10px 12px;
+      border-radius: 5px; font-size: 0.8rem; color: #94a3b8; border-left: 3px solid var(--accent-cyan);
+    }
+
+    /* DESKTOP NÉZET (900px FELETT) */
+    @media (min-width: 900px) {
+      .mobile-nav { display: none; }
+      .desktop-nav { display: flex; }
+      main { height: calc(100% - var(--header-height)); }
+      #tab-map { flex-direction: row; }
+      .map-container { width: 65%; height: 100%; border-bottom: none; border-right: 2px solid var(--border-color); }
+      .map-data-scroll { width: 35%; height: 100%; padding: 20px; }
+      .reticle-screen { flex-direction: row; max-width: 1000px; align-items: center; gap: 30px; height: 100%; }
+      .scope-box { max-width: 440px; flex: 1; }
+      .reticle-screen .m-card { flex: 1; }
+      .theory-screen, .quiz-screen { padding-top: 30px; }
     }
   </style>
 </head>
 <body>
 
+  <!-- FEJLÉC -->
   <header>
     <div class="brand">
       <div class="brand-icon"><i class="fa-solid fa-crosshairs"></i></div>
       <div class="brand-text">
-        <h1>TEREPTAN & TÉRKÉPÉSZET LABOR</h1>
-        <p>UTM & MGRS rácsrendszer • Tüzérségi Mil és Vonás szimulátor</p>
+        <h1>TEREPTAN & TÉRKÉPÉSZET</h1>
+        <p>UTM • MGRS • Mil / Vonás Rendszerek</p>
       </div>
     </div>
-    <div class="badge-mil"><i class="fa-solid fa-graduation-cap"></i> OKTATÓI ESZKÖZ</div>
+
+    <!-- ASZTALI MENÜ GOMBOK -->
+    <nav class="desktop-nav">
+      <button class="d-nav-btn active" onclick="switchTab('tab-map', 0)">
+        <i class="fa-solid fa-map-location-dot"></i> Térkép & MGRS
+      </button>
+      <button class="d-nav-btn" onclick="switchTab('tab-reticle', 1)">
+        <i class="fa-solid fa-crosshairs"></i> Mil Távcső
+      </button>
+      <button class="d-nav-btn" onclick="switchTab('tab-theory', 2)">
+        <i class="fa-solid fa-earth-americas"></i> Vetület
+      </button>
+      <button class="d-nav-btn" onclick="switchTab('tab-quiz', 3)">
+        <i class="fa-solid fa-clipboard-question"></i> Gyakorlás
+      </button>
+    </nav>
+
+    <div class="badge-mil"><i class="fa-solid fa-satellite-dish"></i> OKTATÓI ESZKÖZ</div>
   </header>
 
-  <nav class="tab-nav">
-    <button class="tab-btn active" onclick="switchTab('tab-map', event)"><i class="fa-solid fa-map-location-dot"></i> UTM & MGRS Térkép</button>
-    <button class="tab-btn" onclick="switchTab('tab-reticle', event)"><i class="fa-solid fa-bullseye"></i> Vonás / Mil Távcső</button>
-    <button class="tab-btn" onclick="switchTab('tab-theory', event)"><i class="fa-solid fa-earth-americas"></i> Vetület & Elmélet</button>
-    <button class="tab-btn" onclick="switchTab('tab-quiz', event)"><i class="fa-solid fa-clipboard-question"></i> Terepi Küldetés</button>
-  </nav>
-
   <main>
-    <!-- 1. TÉRKÉP FÜL -->
+    <!-- 1. TÉRKÉP & MGRS NÉZET -->
     <div id="tab-map" class="tab-content active">
-      <div id="map"></div>
-      <div class="map-sidebar">
+      <div class="map-container">
+        <div id="map"></div>
+      </div>
+      <div class="map-data-scroll">
         
-        <div class="section-card">
-          <div class="section-title"><span><i class="fa-solid fa-barcode"></i> MGRS Dekóder</span></div>
-          <div class="decoder-container">
-            <div class="decoder-strip">
-              <div class="dec-part dec-zone"><span id="dec-gzd">34T</span><span class="dec-label">Zóna</span></div>
-              <div class="dec-part dec-sq"><span id="dec-sq">CT</span><span class="dec-label">100km</span></div>
-              <div class="dec-part dec-east"><span id="dec-east">34512</span><span class="dec-label">Keletre</span></div>
-              <div class="dec-part dec-north"><span id="dec-north">89745</span><span class="dec-label">Északra</span></div>
-            </div>
+        <!-- MGRS Dekóder Sáv -->
+        <div class="m-card">
+          <div class="m-card-title">
+            <span><i class="fa-solid fa-barcode"></i> MGRS Rácsdekóder</span>
+            <span style="font-size:0.65rem; color:var(--text-muted);">Valós időben</span>
           </div>
-          <div class="hint-text"><i class="fa-solid fa-arrow-right"></i> „Először bemegyünk az ajtón (Kelet), aztán fel a lépcsőn (Észak)!"</div>
+          <div class="decoder-strip">
+            <div class="dec-part dec-zone"><span id="dec-gzd">34T</span><span class="dec-label">Zóna</span></div>
+            <div class="dec-part dec-sq"><span id="dec-sq">CT</span><span class="dec-label">100km</span></div>
+            <div class="dec-part dec-east"><span id="dec-east">35261</span><span class="dec-label">Keletre (X)</span></div>
+            <div class="dec-part dec-north"><span id="dec-north">89745</span><span class="dec-label">Északra (Y)</span></div>
+          </div>
+          <div style="font-size:0.75rem; color:var(--text-muted); margin-top:8px;">
+            <i class="fa-solid fa-arrow-turn-up" style="color:var(--accent-amber)"></i> Szabály: <strong>„Először be az ajtón (Kelet), aztán fel a lépcsőn (Észak)!”</strong>
+          </div>
         </div>
 
-        <div class="section-card">
-          <div class="section-title"><span><i class="fa-solid fa-layer-group"></i> Pontossági Lépcsők</span></div>
-          <div class="precision-ladder" id="precisionLadder"></div>
-        </div>
-
+        <!-- Rádióforgalom Szimulátor Hanggal -->
         <div class="radio-panel">
           <div class="radio-title"><i class="fa-solid fa-tower-broadcast"></i> Rádióforgalom Szimulátor</div>
           <div class="radio-variant">
-            <div class="radio-variant-label"><strong>❌ Fokban</strong><span>GPS</span></div>
+            <div class="radio-variant-label"><strong>❌ Földrajzi Fok (GPS)</strong><span>Hosszú & Zavarérzékeny</span></div>
             <div class="radio-text" id="radio-degrees">47.50723, 19.04561</div>
             <div class="radio-text spoken" id="radio-degrees-spoken"></div>
-            <div class="radio-meta"><span>Karakterek: <strong id="deg-chars">18</strong></span><span>Idő: <strong id="deg-time">~7 s</strong></span></div>
+            <div class="radio-meta"><span>Hossz: <strong id="deg-chars">18</strong> betű</span><span>Adásidő: <strong id="deg-time">~7 s</strong></span></div>
           </div>
           <div class="radio-variant good">
-            <div class="radio-variant-label"><strong>✅ MGRS</strong><span>NATO</span></div>
+            <div class="radio-variant-label"><strong>✅ MGRS Katonai Rács</strong><span>Rövid & Biztonságos</span></div>
             <div class="radio-text" id="radio-mgrs">34T CT 537 599</div>
             <div class="radio-text spoken" id="radio-mgrs-spoken"></div>
-            <div class="radio-meta"><span>Karakterek: <strong id="mgrs-chars">15</strong></span><span>Idő: <strong id="mgrs-time">~5 s</strong></span></div>
+            <div class="radio-meta"><span>Hossz: <strong id="mgrs-chars">15</strong> betű</span><span>Adásidő: <strong id="mgrs-time">~5 s</strong></span></div>
           </div>
           <div class="radio-actions">
-            <button class="btn-radio" id="btn-listen-deg" onclick="speakVariant('deg')"><i class="fa-solid fa-volume-high"></i> Fok</button>
-            <button class="btn-radio" id="btn-listen-mgrs" onclick="speakVariant('mgrs')"><i class="fa-solid fa-volume-high"></i> MGRS</button>
+            <button class="btn-radio" id="btn-listen-deg" onclick="speakVariant('deg')"><i class="fa-solid fa-volume-high"></i> Fok Meghallgatása</button>
+            <button class="btn-radio" id="btn-listen-mgrs" onclick="speakVariant('mgrs')"><i class="fa-solid fa-volume-high"></i> MGRS Meghallgatása</button>
           </div>
         </div>
 
-        <div class="section-card">
-          <div class="section-title"><span><i class="fa-solid fa-compass"></i> Részletes Pozíció</span></div>
-          <div class="coord-grid">
-            <div class="coord-box"><div class="coord-box-label">Fok (WGS84)</div><div class="coord-box-val" id="disp-wgs">47.507, 19.045</div></div>
-            <div class="coord-box"><div class="coord-box-label">UTM Méter</div><div class="coord-box-val" id="disp-utm">34N 352600m E</div></div>
+        <!-- Pontossági Lépcsők -->
+        <div class="m-card">
+          <div class="m-card-title"><span><i class="fa-solid fa-layer-group"></i> Pontossági Lépcsők</span></div>
+          <div class="precision-ladder" id="precisionLadder"></div>
+        </div>
+
+        <!-- Gyors ugrás terepre -->
+        <div class="m-card">
+          <div class="m-card-title"><span><i class="fa-solid fa-map-pin"></i> Gyors Ugrás Terepre</span></div>
+          <div class="chip-scroll">
+            <button class="chip-btn" onclick="flyToLoc(47.5072, 19.0455)">🏛️ Bp. Országház (34T)</button>
+            <button class="chip-btn" onclick="flyToLoc(47.8727, 20.0083)">⛰️ Kékestető (34T)</button>
+            <button class="chip-btn" onclick="flyToLoc(46.9142, 17.8931)">⛵ Tihany (33T)</button>
+            <button class="chip-btn" onclick="flyToLoc(47.9044, 20.3791)">🏰 Egri Vár (34T)</button>
+            <button class="chip-btn" onclick="flyToLoc(47.5847, 21.1489)">🌾 Hortobágy (34T)</button>
           </div>
-          <div style="margin-top:12px;">
-            <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Teszthelyszínek:</span>
-            <div class="preset-btns">
-              <button class="btn-preset" onclick="flyToLoc(47.5072, 19.0455)">🏛️ Országház (34T)</button>
-              <button class="btn-preset" onclick="flyToLoc(47.8727, 20.0083)">⛰️ Kékestető (34T)</button>
-              <button class="btn-preset" onclick="flyToLoc(46.9142, 17.8931)">⛵ Tihany (33T)</button>
-              <button class="btn-preset" onclick="flyToLoc(47.9044, 20.3791)">🏰 Egri Vár (34T)</button>
+        </div>
+
+        <!-- Részletes koordináták -->
+        <div class="m-card">
+          <div class="m-card-title"><span><i class="fa-solid fa-compass"></i> Számított Koordináták</span></div>
+          <div class="coord-grid">
+            <div class="coord-item">
+              <div class="coord-item-label">Földrajzi Fok (WGS84)</div>
+              <div class="coord-item-val" id="disp-wgs">47.5072°, 19.0455°</div>
+            </div>
+            <div class="coord-item">
+              <div class="coord-item-label">UTM Méter Alapon</div>
+              <div class="coord-item-val" id="disp-utm">34N 352610m, 5263200m</div>
             </div>
           </div>
         </div>
+
       </div>
     </div>
 
-    <!-- 2. TÁVCSŐ FÜL -->
+    <!-- 2. VONÁS / MIL TÁVCSŐ SZIMULÁTOR -->
     <div id="tab-reticle" class="tab-content">
-      <div class="reticle-view">
-        <div class="scope-frame">
-          <canvas id="reticle-canvas" width="600" height="600"></canvas>
-        </div>
-      </div>
-      <div class="reticle-controls">
-        <div class="section-card">
-          <div class="section-title"><span><i class="fa-solid fa-sliders"></i> Szögrendszer</span></div>
-          <div class="system-toggle">
-            <button class="sys-btn active" id="btn-nato" onclick="setAngleSystem('NATO')">NATO MIL (6400)</button>
-            <button class="sys-btn" id="btn-warsaw" onclick="setAngleSystem('WARSAW')">Varsói Vonás (6000)</button>
+      <div class="reticle-screen">
+        <div>
+          <div class="scope-box">
+            <canvas id="reticle-canvas" width="600" height="600"></canvas>
+          </div>
+          <div style="font-size:0.75rem; color:var(--text-muted); text-align:center; margin-top:8px;">
+            👆 <strong>Célpont mozgatása:</strong> Húzd az egeret vagy az ujjad a képen a skálaosztásokra!
           </div>
         </div>
-        <div class="section-card">
-          <div class="section-title"><span><i class="fa-solid fa-crosshairs"></i> Célpont</span></div>
-          <div class="target-selector">
-            <button class="btn-target active" onclick="setTarget('truck', 2.5, event)"><i class="fa-solid fa-truck"></i><span>Teherautó</span><span class="target-size-tag">2.5 m</span></button>
-            <button class="btn-target" onclick="setTarget('tank', 2.8, event)"><i class="fa-solid fa-shield-halved"></i><span>Harckocsi</span><span class="target-size-tag">2.8 m</span></button>
-            <button class="btn-target" onclick="setTarget('soldier', 1.8, event)"><i class="fa-solid fa-person-rifle"></i><span>Katona</span><span class="target-size-tag">1.8 m</span></button>
-            <button class="btn-target" onclick="setTarget('tower', 25.0, event)"><i class="fa-solid fa-gopuram"></i><span>Torony</span><span class="target-size-tag">25.0 m</span></button>
+
+        <div class="m-card">
+          <div class="m-card-title">
+            <span>🎯 Célpont & Skálaválasztás</span>
+            <span id="target-info-tag" style="color:var(--accent-amber); font-size:0.75rem;">M = 2.5 m</span>
           </div>
-          <div class="control-group" style="margin-top:14px;">
-            <label><span>Távolság:</span><span id="dist-display" style="font-family:'JetBrains Mono'; color:var(--accent-cyan); font-weight:700;">500 m</span></label>
-            <input type="range" id="slider-dist" min="100" max="2500" step="25" value="500" oninput="updateDistance(this.value)">
+          <div class="target-chips">
+            <button class="btn-target-m active" onclick="setTarget('truck', 2.5, 'Teherautó')"><i class="fa-solid fa-truck"></i> Teherautó (2.5m)</button>
+            <button class="btn-target-m" onclick="setTarget('tank', 2.8, 'Harckocsi')"><i class="fa-solid fa-shield-halved"></i> Harckocsi (2.8m)</button>
+            <button class="btn-target-m" onclick="setTarget('soldier', 1.8, 'Katona')"><i class="fa-solid fa-person-rifle"></i> Katona (1.8m)</button>
+            <button class="btn-target-m" onclick="setTarget('tree', 5.0, 'Fa / Vadles')"><i class="fa-solid fa-tree"></i> Fa / Les (5.0m)</button>
+            <button class="btn-target-m" onclick="setTarget('tower', 25.0, 'Templom')"><i class="fa-solid fa-gopuram"></i> Templom (25m)</button>
+            <button class="btn-target-m" onclick="toggleSystem()"><i class="fa-solid fa-rotate"></i> <span id="btn-sys-label">NATO (6400)</span></button>
           </div>
-        </div>
-        <div class="section-card">
-          <div class="section-title"><span><i class="fa-solid fa-calculator"></i> Képlet</span></div>
-          <div class="formula-card">
-            <div style="font-size:0.75rem; color:var(--text-muted); text-align:center;">ARANYSZABÁLY:</div>
-            <div class="formula-math">Távolság = (Méret × 1000) / Vonás</div>
-            <div id="live-calc" style="font-family:'JetBrains Mono'; font-size:0.8rem; color:#fff; text-align:center; margin-top:8px;"></div>
+
+          <div class="range-wrap" style="margin-top:14px;">
+            <div class="range-label">
+              <span>Szimulált távolság:</span>
+              <strong id="dist-display" style="color:var(--accent-cyan); font-family:'JetBrains Mono';">500 m</strong>
+            </div>
+            <input type="range" id="slider-dist" min="100" max="2000" step="25" value="500" oninput="updateDistance(this.value)">
+          </div>
+
+          <div class="formula-banner" style="margin-top:12px;">
+            <div style="font-size:0.7rem; color:var(--text-muted);">TÁVOLSÁGBECSLÉS EZREDSZABÁLLYAL:</div>
+            <div class="formula-math" id="live-calc">D = (2.5 × 1000) / 5.0 = 500 m</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 3. ELMÉLET FÜL -->
+    <!-- 3. ELMÉLET & VETÜLET-SZEMLÉLTETŐ -->
     <div id="tab-theory" class="tab-content">
-      <div class="theory-wrap">
-        <div class="theory-hero">
-          <h2>Miért létezik UTM és MGRS?</h2>
-          <p>A Föld geoid alakú, gömbfelület. Egy gömböt lehetetlen úgy kiteríteni sík papírra, hogy ne torzuljon. Tekintsd meg az alábbi interaktív vetületi szemléltetőt!</p>
-        </div>
-        <div class="anim-box">
-          <canvas id="proj-canvas" width="650" height="280"></canvas>
-          <div class="anim-controls">
-            <button class="btn-anim active" onclick="setAnimState('sphere', event)"><i class="fa-solid fa-globe"></i> 1. Gömb</button>
-            <button class="btn-anim" onclick="setAnimState('flatten', event)"><i class="fa-solid fa-lemon"></i> 2. Narancshéj</button>
-            <button class="btn-anim" onclick="setAnimState('cylinder', event)"><i class="fa-solid fa-scroll"></i> 3. Henger</button>
-            <button class="btn-anim" onclick="setAnimState('zones', event)"><i class="fa-solid fa-grip-vertical"></i> 4. 60 Zóna</button>
+      <div class="theory-screen">
+        <div class="m-card">
+          <div class="m-card-title"><span><i class="fa-solid fa-earth-americas"></i> Miért van szükség UTM-re?</span></div>
+          <div class="p-canvas-box">
+            <canvas id="proj-canvas" width="600" height="340"></canvas>
           </div>
-          <div id="anim-explanation">A Föld gömbölyű: fokban mért koordinátái terepen nehezen használhatók távolságmérésre.</div>
+          <div class="anim-btn-row" style="margin-top:10px;">
+            <button class="btn-anim-m active" onclick="setAnimState('sphere')">1. Gömbi Föld</button>
+            <button class="btn-anim-m" onclick="setAnimState('flatten')">2. Narancshéj Kiterítés</button>
+            <button class="btn-anim-m" onclick="setAnimState('cylinder')">3. Érintő Henger</button>
+            <button class="btn-anim-m" onclick="setAnimState('zones')">4. 60 UTM Zóna</button>
+          </div>
+          <p id="anim-desc" style="font-size:0.8rem; color:var(--accent-cyan); margin-top:10px; line-height:1.5;">
+            A Föld gömbölyű: fokos koordinátákkal síkban nem lehet pontos távolságot mérni torzulás nélkül.
+          </p>
         </div>
-        <div class="info-card">
-          <h3><i class="fa-solid fa-layer-group"></i> Az UTM rendszer lényege</h3>
-          <p>A Földet <strong>60 keskeny, 6 fokos zónára</strong> vágták fel. Minden zóna saját sík koordinátarendszerrel rendelkezik, így a méterek pontosak. Magyarország a <strong>33-as</strong> és <strong>34-es zóna</strong> határán fekszik, a <strong>T</strong> sávban.</p>
-        </div>
-        <div class="info-card">
-          <h3><i class="fa-solid fa-chess-board"></i> Az MGRS zsenialitása</h3>
-          <p>Az UTM méteradatok túl hosszúak. Az MGRS a zónán belül minden 100×100 km-es négyzetnek ad egy kétbetűs nevet (pl. <strong>CT</strong>). Ezzel a többmilliós méterszámokat levágja, és csak a blokkon belüli lokális pozíciót kell bemondani!</p>
+
+        <div class="m-card">
+          <div class="m-card-title"><span>📖 Gyors Összefoglaló Diákoknak</span></div>
+          <ul style="font-size:0.8rem; color:#cbd5e1; padding-left:18px; line-height:1.7; display:flex; flex-direction:column; gap:6px;">
+            <li><strong>UTM (60 zóna):</strong> A Földet 6°-os függőleges szeletekre vágjuk, hogy a sík papíron méterben pontosan mérhessünk. Magyarország: <strong>33N és 34N</strong>.</li>
+            <li><strong>MGRS (Katonai Rács):</strong> A hosszú milliós számok helyett kétbetűs 100×100 km-es blokkokat használ (pl. <strong>34T CT</strong>), így rádión gyors és hibamentes.</li>
+            <li><strong>Vonás / Mil (Ezred):</strong> 1 mil = 1 méteres cél 1000 méterről. NATO: 6400 vonás / kör, Varsói Szerződés: 6000 vonás / kör.</li>
+          </ul>
         </div>
       </div>
     </div>
 
-    <!-- 4. KVÍZ FÜL -->
+    <!-- 4. GYAKORLÁS & KVÍZ -->
     <div id="tab-quiz" class="tab-content">
-      <div class="quiz-wrap">
-        <div class="theory-hero">
-          <h2>Terepi Küldetés: Ellenőrizd a tudásod!</h2>
-        </div>
-        <div class="quiz-question-card" id="q1">
-          <span class="q-badge">1. KÉRDÉS // UTM GEOMETRIA</span>
-          <div class="q-text">Hány fok szélességű egy-egy UTM hosszúsági zóna a Földön?</div>
-          <div class="q-options">
-            <button class="q-opt" onclick="answerQuiz(1, 0, false)">A) 10 fok (36 zóna)</button>
-            <button class="q-opt" onclick="answerQuiz(1, 1, true)">B) 6 fok (60 zóna)</button>
-            <button class="q-opt" onclick="answerQuiz(1, 2, false)">C) 15 fok (időzónák)</button>
+      <div class="quiz-screen">
+        <div class="m-card" id="q1">
+          <span style="font-size:0.7rem; color:var(--accent-blue); font-weight:700;">1. KÉRDÉS // UTM ZÓNÁK</span>
+          <p style="font-size:0.9rem; font-weight:600; color:#fff; margin:6px 0;">Hány fok széles egyetlen UTM hosszúsági szelet?</p>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <button class="q-opt-m" onclick="answerQuiz(1, 0, false)">A) 15 fok (időzónák)</button>
+            <button class="q-opt-m" onclick="answerQuiz(1, 1, true)">B) 6 fok (60 zóna körben)</button>
+            <button class="q-opt-m" onclick="answerQuiz(1, 2, false)">C) 10 fok</button>
           </div>
-          <div class="q-explanation" id="exp-1"><strong>Helyes: B!</strong> A Föld 360 fokát 60 db 6 fokos zónára osztja az UTM.</div>
+          <div class="q-exp-m" id="exp-1"><strong>Helyes!</strong> 360° / 60 zóna = pontosan 6 fokos szeletek.</div>
         </div>
-        <div class="quiz-question-card" id="q2">
-          <span class="q-badge">2. KÉRDÉS // TÁVOLSÁGBECSLÉS</span>
-          <div class="q-text">A távcsőben egy 2 m magas cél 4 mil magasságot tesz ki. Milyen messze van?</div>
-          <div class="q-options">
-            <button class="q-opt" onclick="answerQuiz(2, 0, false)">A) 250 m</button>
-            <button class="q-opt" onclick="answerQuiz(2, 1, false)">B) 800 m</button>
-            <button class="q-opt" onclick="answerQuiz(2, 2, true)">C) 500 m</button>
+
+        <div class="m-card" id="q2">
+          <span style="font-size:0.7rem; color:var(--accent-blue); font-weight:700;">2. KÉRDÉS // VONÁSBECSLÉS</span>
+          <p style="font-size:0.9rem; font-weight:600; color:#fff; margin:6px 0;">Egy 2.5 m magas teherautó 5 mil a szálkereszten. Távolság?</p>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <button class="q-opt-m" onclick="answerQuiz(2, 0, false)">A) 250 méter</button>
+            <button class="q-opt-m" onclick="answerQuiz(2, 1, true)">B) 500 méter</button>
+            <button class="q-opt-m" onclick="answerQuiz(2, 2, false)">C) 1000 méter</button>
           </div>
-          <div class="q-explanation" id="exp-2"><strong>Helyes: C!</strong> (2 × 1000) / 4 = 500 méter.</div>
+          <div class="q-exp-m" id="exp-2"><strong>Helyes!</strong> D = (2.5 × 1000) / 5 = 500 méter.</div>
+        </div>
+
+        <div class="m-card" id="q3">
+          <span style="font-size:0.7rem; color:var(--accent-blue); font-weight:700;">3. KÉRDÉS // MGRS SZABÁLY</span>
+          <p style="font-size:0.9rem; font-weight:600; color:#fff; margin:6px 0;">Melyik a helyes koordináta-olvasási sorrend a rácson?</p>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <button class="q-opt-m" onclick="answerQuiz(3, 0, true)">A) Először Kelet (X), utána Észak (Y)</button>
+            <button class="q-opt-m" onclick="answerQuiz(3, 1, false)">B) Először Észak (Y), utána Kelet (X)</button>
+          </div>
+          <div class="q-exp-m" id="exp-3"><strong>Helyes!</strong> „Először be a házba (vízszintes), utána fel a lépcsőn (függőleges).”</div>
         </div>
       </div>
     </div>
   </main>
 
+  <!-- MOBIL ALSÓ MENÜ -->
+  <nav class="mobile-nav">
+    <button class="nav-item active" onclick="switchTab('tab-map', 0)">
+      <i class="fa-solid fa-map-location-dot"></i><span>Térkép</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('tab-reticle', 1)">
+      <i class="fa-solid fa-crosshairs"></i><span>Mil Távcső</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('tab-theory', 2)">
+      <i class="fa-solid fa-earth-americas"></i><span>Vetület</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('tab-quiz', 3)">
+      <i class="fa-solid fa-clipboard-question"></i><span>Kvíz</span>
+    </button>
+  </nav>
+
   <script>
     // =====================================================
-    // 1. TÉRKÉP + VALÓDI MGRS RÁCS
+    // 1. TÉRKÉP + MGRS SEGEDRÁCS
     // =====================================================
-    let map;
-    let marker;
+    let map, marker;
     let currentLatLng = [47.5072, 19.0455];
 
     function initMap() {
-      map = L.map('map', { zoomControl: true, attributionControl: false, minZoom: 6, maxZoom: 18 }).setView(currentLatLng, 12);
-      const osmStandard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 });
-      const esriSatellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18 });
-      osmStandard.addTo(map);
-      L.control.layers({ "🗺️ Utca": osmStandard, "🛰️ Műhold": esriSatellite }, null, { position: 'topright' }).addTo(map);
+      map = L.map('map', { zoomControl: false, attributionControl: false }).setView(currentLatLng, 12);
+      L.control.zoom({ position: 'topright' }).addTo(map);
+
+      const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 });
+      const topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17 });
+      const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18 });
+
+      osm.addTo(map);
+      L.control.layers({ "🗺️ Utca": osm, "⛰️ Terep": topo, "🛰️ Műhold": sat }, null, { position: 'topleft' }).addTo(map);
 
       // Marker
       const customIcon = L.divIcon({
         className: 'custom-pin',
-        html: `<div style="background:var(--accent-cyan); width:18px; height:18px; border-radius:50%; border:3px solid #fff; box-shadow:0 0 12px var(--accent-cyan);"></div>`,
-        iconSize: [18, 18], iconAnchor: [9, 9]
+        html: `<div style="background:var(--accent-cyan); width:20px; height:20px; border-radius:50%; border:3px solid #fff; box-shadow:0 0 10px #000;"></div>`,
+        iconSize: [20, 20], iconAnchor: [10, 10]
       });
-      marker = L.marker(currentLatLng, { draggable: true, icon: customIcon }).addTo(map);
-      marker.on('drag', (e) => updatePosition(e.target.getLatLng()));
-      map.on('click', (e) => { marker.setLatLng(e.latlng); updatePosition(e.latlng); });
 
-      // MGRS Rács inicializálása
+      marker = L.marker(currentLatLng, { draggable: true, icon: customIcon }).addTo(map);
+      marker.on('drag', (e) => updatePos(e.target.getLatLng()));
+      map.on('click', (e) => { marker.setLatLng(e.latlng); updatePos(e.latlng); });
+
+      // Vizuális MGRS 100km-es rácsvonalak hozzáadása
       initMGRSGrid();
 
-      updatePosition(L.latLng(currentLatLng[0], currentLatLng[1]));
+      updatePos(L.latLng(currentLatLng[0], currentLatLng[1]));
     }
 
-    // === VALÓDI MGRS RÁCS (proj4js segítségével) ===
-    let mgrsGridLayer = null;
-
     function initMGRSGrid() {
-      // A Leaflet GridLayer-t felülírjuk, hogy saját rácsvonalakat rajzoljunk
-      const MGRSGrid = L.GridLayer.extend({
-        createTile: function(coords) {
-          const tile = document.createElement('canvas');
-          tile.width = 256; tile.height = 256;
-          const ctx = tile.getContext('2d');
-          
-          // A csempe földrajzi koordinátáinak meghatározása
-          const tileBounds = this._tileCoordsToBounds(coords);
-          const nw = tileBounds.getNorthWest();
-          const se = tileBounds.getSouthEast();
-
-          // Kiszámoljuk az UTM koordinátákat a sarokpontokra
-          // Ehhez a proj4js-t használjuk (WGS84 -> UTM)
-          const zone = Math.floor((nw.lng + 180) / 6) + 1;
-          const projStr = `+proj=utm +zone=${zone} +datum=WGS84 +units=m +no_defs`;
-
-          try {
-            const nwUTM = proj4('EPSG:4326', projStr, [nw.lng, nw.lat]);
-            const seUTM = proj4('EPSG:4326', projStr, [se.lng, se.lat]);
-
-            // Kirajzoljuk a rácsot 100 km-enként
-            // (A valódi MGRS blokkok 100km-esek, itt közelítünk)
-            const step = 100000; // 100 km
-            const minE = Math.floor(Math.min(nwUTM[0], seUTM[0]) / step) * step;
-            const maxE = Math.ceil(Math.max(nwUTM[0], seUTM[0]) / step) * step;
-            const minN = Math.floor(Math.min(nwUTM[1], seUTM[1]) / step) * step;
-            const maxN = Math.ceil(Math.max(nwUTM[1], seUTM[1]) / step) * step;
-
-            ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
-            ctx.lineWidth = 1.5;
-
-            // Vízszintes vonalak
-            for (let e = minE; e <= maxE; e += step) {
-              // Konvertáljuk vissza a képpontokra
-              const p1 = proj4(projStr, 'EPSG:4326', [e, nwUTM[1]]);
-              const p2 = proj4(projStr, 'EPSG:4326', [e, seUTM[1]]);
-              // (Egyszerűsített rajzolás - a Leaflet saját vetülete miatt közelítünk)
-            }
-          } catch (e) {
-            console.warn("Rács hiba:", e);
-          }
-
-          return tile;
-        }
-      });
-
-      // Vizuális segédrács (egyszerű vonalak)
-      // Mivel a valódi MGRS blokkok zónánként változnak, itt egy 100km-es rácsvonalat rajzolunk
-      // közvetlenül a térképre, a jobb átláthatóság érdekében.
-      const gridLines = [];
       const startLat = 45.5, endLat = 48.8;
       const startLng = 16.0, endLng = 23.0;
-      
-      // 1 fok ~ 111 km. A 100km-es rácsvonalakhoz 0.9 fokot használunk közelítésként.
-      const stepDeg = 0.9; 
+      const stepDeg = 0.9; // ~100 km távolság
 
-      // Csak vizuális segédvonalak (nem pontos MGRS, de jó tanítási célra)
       for (let lat = startLat; lat <= endLat; lat += stepDeg) {
         L.polyline([[lat, startLng], [lat, endLng]], {
-          color: '#10b981', weight: 1, opacity: 0.3, dashArray: '5, 5', interactive: false
+          color: '#10b981', weight: 1.5, opacity: 0.35, dashArray: '6, 6', interactive: false
         }).addTo(map);
       }
       for (let lng = startLng; lng <= endLng; lng += stepDeg) {
         L.polyline([[startLat, lng], [endLat, lng]], {
-          color: '#10b981', weight: 1, opacity: 0.3, dashArray: '5, 5', interactive: false
+          color: '#10b981', weight: 1.5, opacity: 0.35, dashArray: '6, 6', interactive: false
         }).addTo(map);
       }
 
-      // Címkék a blokkokhoz (példaértékűen)
-      // A valódi MGRS blokknevek (pl. CT) a zónától és a pozíciótól függenek.
-      // Itt most statikusan elhelyezünk néhányat tanítási célra.
       const labels = [
         { lat: 47.5, lng: 19.0, text: 'CT' },
         { lat: 47.5, lng: 19.9, text: 'DT' },
-        { lat: 47.5, lng: 18.1, text: 'CS' },
-        { lat: 48.4, lng: 19.0, text: 'CU' }
+        { lat: 47.5, lng: 18.1, text: 'BT' },
+        { lat: 48.4, lng: 19.0, text: 'CU' },
+        { lat: 46.6, lng: 19.0, text: 'CS' }
       ];
       labels.forEach(lbl => {
         L.marker([lbl.lat, lbl.lng], {
-          icon: L.divIcon({
-            className: 'utm-label',
-            html: lbl.text,
-            iconSize: [30, 20],
-            iconAnchor: [15, 10]
-          }),
+          icon: L.divIcon({ className: 'utm-label', html: lbl.text, iconSize: [32, 22], iconAnchor: [16, 11] }),
           interactive: false
         }).addTo(map);
       });
     }
 
-    // === POZÍCIÓ FRISSÍTÉSE ===
-    function updatePosition(latlng) {
-      const lat = latlng.lat; const lng = latlng.lng;
-      document.getElementById('disp-wgs').innerText = `${lat.toFixed(5)}°, ${lng.toFixed(5)}°`;
-
+    function updatePos(ll) {
+      document.getElementById('disp-wgs').innerText = `${ll.lat.toFixed(4)}°, ${ll.lng.toFixed(4)}°`;
       try {
-        const mgrsCode = mgrs.forward([lng, lat]);
-        const gzd = mgrsCode.substring(0, 3);
-        const sq = mgrsCode.substring(3, 5);
-        const rest = mgrsCode.substring(5);
-        const half = Math.floor(rest.length / 2);
-        const east = rest.substring(0, half);
-        const north = rest.substring(half);
+        const code = mgrs.forward([ll.lng, ll.lat]);
+        const gzd = code.substring(0, 3);
+        const sq = code.substring(3, 5);
+        const rem = code.substring(5);
+        const half = rem.length / 2;
+        const e = rem.substring(0, half);
+        const n = rem.substring(half);
 
         document.getElementById('dec-gzd').innerText = gzd;
         document.getElementById('dec-sq').innerText = sq;
-        document.getElementById('dec-east').innerText = east;
-        document.getElementById('dec-north').innerText = north;
+        document.getElementById('dec-east').innerText = e;
+        document.getElementById('dec-north').innerText = n;
+        document.getElementById('disp-utm').innerText = `Zóna ${gzd} E: ${e.padEnd(5, '0')}m, N: ${n.padEnd(5, '0')}m`;
 
-        const zoneNum = parseInt(gzd.substring(0, 2));
-        document.getElementById('disp-utm').innerText = `Zóna ${zoneNum}N | E: ${east.padEnd(5, '0')}m`;
-
-        renderPrecisionLadder(gzd, sq, east, north);
-        updateRadioPanel(lat, lng, gzd, sq, east, north);
-      } catch (err) { console.error("MGRS hiba:", err); }
+        renderPrecisionLadder(gzd, sq, e, n);
+        updateRadioPanel(ll.lat, ll.lng, gzd, sq, e, n);
+      } catch(err) { console.error(err); }
     }
 
     function renderPrecisionLadder(gzd, sq, east, north) {
-      const ladder = document.getElementById('precisionLadder');
-      ladder.innerHTML = `
+      document.getElementById('precisionLadder').innerHTML = `
         <div class="prec-step"><div><span class="prec-badge">10 km</span></div><div class="prec-code">${gzd} ${sq} <span style="color:var(--accent-amber)">${east.substring(0,1)}</span><span style="color:var(--accent-red)">${north.substring(0,1)}</span></div></div>
         <div class="prec-step active"><div><span class="prec-badge">100 m</span></div><div class="prec-code">${gzd} ${sq} <span style="color:var(--accent-amber)">${east.substring(0,3)}</span> <span style="color:var(--accent-red)">${north.substring(0,3)}</span></div></div>
         <div class="prec-step"><div><span class="prec-badge">1 m</span></div><div class="prec-code">${gzd} ${sq} <span style="color:var(--accent-amber)">${east}</span> <span style="color:var(--accent-red)">${north}</span></div></div>
       `;
     }
 
+    // --- HANGOS RÁDIÓSZIMULÁCIÓ ---
     function updateRadioPanel(lat, lng, gzd, sq, east, north) {
       const degText = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
       document.getElementById('radio-degrees').innerText = degText;
       document.getElementById('deg-chars').innerText = degText.length;
       document.getElementById('deg-time').innerText = `~${Math.ceil(degText.length / 2.5)} s`;
 
-      const latStr = lat.toFixed(5).replace('.', ' egész ').replace(/(\d)/g, '$1 ');
-      const lngStr = lng.toFixed(5).replace('.', ' egész ').replace(/(\d)/g, '$1 ');
-      document.getElementById('radio-degrees-spoken').innerText = `„${latStr.trim()}, ${lngStr.trim()}”`;
+      const latStr = lat.toFixed(5).replace('.', ' egész ').split('').join(' ');
+      const lngStr = lng.toFixed(5).replace('.', ' egész ').split('').join(' ');
+      document.getElementById('radio-degrees-spoken').innerText = `„${latStr}, ${lngStr}”`;
 
       const mgrsShort = `${gzd} ${sq} ${east.substring(0,3)} ${north.substring(0,3)}`;
       document.getElementById('radio-mgrs').innerText = mgrsShort;
@@ -600,120 +647,159 @@
       const mgrsBtn = document.getElementById('btn-listen-mgrs');
       degBtn.classList.remove('playing'); mgrsBtn.classList.remove('playing');
 
-      let textToSpeak = type === 'deg' ? document.getElementById('radio-degrees-spoken').innerText.replace(/[„”]/g, '') : document.getElementById('radio-mgrs-spoken').innerText.replace(/[„”]/g, '');
+      let textToSpeak = type === 'deg' 
+        ? document.getElementById('radio-degrees-spoken').innerText.replace(/[„”]/g, '')
+        : document.getElementById('radio-mgrs-spoken').innerText.replace(/[„”]/g, '');
+
       if (type === 'deg') degBtn.classList.add('playing'); else mgrsBtn.classList.add('playing');
 
       currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
-      currentUtterance.lang = 'hu-HU'; currentUtterance.rate = 0.9;
+      currentUtterance.lang = 'hu-HU';
+      currentUtterance.rate = 0.9;
       currentUtterance.onend = () => { degBtn.classList.remove('playing'); mgrsBtn.classList.remove('playing'); };
       window.speechSynthesis.speak(currentUtterance);
     }
 
     function flyToLoc(lat, lng) {
       currentLatLng = [lat, lng];
-      map.flyTo(currentLatLng, 14, { duration: 1.2 });
+      map.flyTo(currentLatLng, 13, { duration: 1.2 });
       marker.setLatLng(currentLatLng);
-      updatePosition(L.latLng(lat, lng));
+      updatePos(L.latLng(lat, lng));
     }
 
     // =====================================================
-    // 2. TÁVCSŐ / MIL SZIMULÁTOR
+    // 2. VONÁS / MIL SZIMULÁTOR
     // =====================================================
     const canvas = document.getElementById('reticle-canvas');
     const ctx = canvas.getContext('2d');
-    let currentSystem = 'NATO';
-    let currentTarget = { type: 'truck', height: 2.5 };
-    let currentDistance = 500;
+    let angleSys = 'NATO';
+    let curTarget = { type: 'truck', h: 2.5, name: 'Teherautó' };
+    let curDist = 500;
+    let targetOffset = { x: 0, y: 0 };
+    let isDragging = false, dragStart = { x: 0, y: 0 };
 
     function drawReticle() {
-      const w = canvas.width, h = canvas.height, cx = w/2, cy = h/2;
+      const w = canvas.width, h = canvas.height, cx = w / 2, cy = h / 2;
       ctx.clearRect(0, 0, w, h);
 
-      const grad = ctx.createLinearGradient(0, 0, 0, h);
-      grad.addColorStop(0, '#111e38'); grad.addColorStop(0.65, '#22334d'); grad.addColorStop(0.66, '#18241b'); grad.addColorStop(1, '#0c140e');
-      ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
+      const g = ctx.createLinearGradient(0, 0, 0, h);
+      g.addColorStop(0, '#0f172a'); g.addColorStop(0.65, '#1e293b'); g.addColorStop(0.66, '#141e17'); g.addColorStop(1, '#080d09');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
 
       const pixelsPerMil = 18;
-      const rad = currentTarget.height / currentDistance;
-      const mils = currentSystem === 'NATO' ? (rad * (6400 / (2 * Math.PI))) : (rad * (6000 / (2 * Math.PI)));
-      const targetPixelH = mils * pixelsPerMil;
-      const targetPixelW = targetPixelH * 1.8;
+      const rad = curTarget.h / curDist;
+      const mils = angleSys === 'NATO' ? (rad * (6400 / (2 * Math.PI))) : (rad * (6000 / (2 * Math.PI)));
+      const pxH = mils * pixelsPerMil;
+      const pxW = pxH * (curTarget.type === 'truck' ? 1.8 : (curTarget.type === 'tank' ? 2.2 : (curTarget.type === 'soldier' ? 0.45 : 0.8)));
 
-      // Célpont grafikus rajzolása
-      ctx.fillStyle = 'rgba(56, 189, 248, 0.25)';
-      ctx.strokeStyle = '#38bdf8';
-      ctx.lineWidth = 2;
-      
-      if (currentTarget.type === 'truck') {
+      const tx = cx + targetOffset.x;
+      const ty = cy + targetOffset.y;
+
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.3)'; ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2;
+      if (curTarget.type === 'soldier') {
         ctx.beginPath();
-        ctx.rect(cx - targetPixelW/2, cy - targetPixelH, targetPixelW * 0.6, targetPixelH);
-        ctx.rect(cx - targetPixelW/2 + targetPixelW * 0.6, cy - targetPixelH * 0.7, targetPixelW * 0.4, targetPixelH * 0.7);
-        ctx.fill(); ctx.stroke();
-      } else if (currentTarget.type === 'soldier') {
-        ctx.beginPath();
-        ctx.arc(cx, cy - targetPixelH + targetPixelH*0.15, targetPixelH * 0.15, 0, Math.PI*2);
-        ctx.rect(cx - targetPixelW/2, cy - targetPixelH + targetPixelH*0.3, targetPixelW, targetPixelH * 0.7);
+        ctx.arc(tx, ty - pxH + pxH*0.15, pxH*0.15, 0, Math.PI*2);
+        ctx.rect(tx - pxW/2, ty - pxH + pxH*0.3, pxW, pxH*0.7);
         ctx.fill(); ctx.stroke();
       } else {
         ctx.beginPath();
-        ctx.rect(cx - targetPixelW/2, cy - targetPixelH, targetPixelW, targetPixelH);
+        ctx.rect(tx - pxW/2, ty - pxH, pxW, pxH);
         ctx.fill(); ctx.stroke();
       }
 
-      // Szálkereszt
       ctx.strokeStyle = '#ef4444'; ctx.fillStyle = '#ef4444'; ctx.lineWidth = 1.5;
-      ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.stroke();
+      ctx.font = '12px JetBrains Mono'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+
+      ctx.beginPath();
+      ctx.moveTo(cx, 0); ctx.lineTo(cx, h);
+      ctx.moveTo(0, cy); ctx.lineTo(w, cy);
+      ctx.stroke();
 
       for (let i = -16; i <= 16; i++) {
         if (i === 0) continue;
-        const tickDist = i * pixelsPerMil;
-        const isMajor = (i % 5 === 0);
-        const tickLen = isMajor ? 14 : 7;
-        ctx.beginPath(); ctx.moveTo(cx - tickLen / 2, cy - tickDist); ctx.lineTo(cx + tickLen / 2, cy - tickDist); ctx.stroke();
-        if (isMajor) ctx.fillText(Math.abs(i), cx + 18, cy - tickDist);
+        const d = i * pixelsPerMil;
+        const isM = (i % 5 === 0);
+        const l = isM ? 14 : 7;
+
+        ctx.beginPath();
+        ctx.moveTo(cx - l/2, cy - d); ctx.lineTo(cx + l/2, cy - d);
+        ctx.moveTo(cx + d, cy - l/2); ctx.lineTo(cx + d, cy + l/2);
+        ctx.stroke();
+
+        if (isM) {
+          ctx.fillText(Math.abs(i), cx + 18, cy - d);
+          ctx.fillText(Math.abs(i), cx + d, cy + 18);
+        }
       }
 
-      document.getElementById('live-calc').innerText = `${currentDistance} m = (${currentTarget.height} m × 1000) / ${mils.toFixed(1)}`;
+      ctx.beginPath();
+      ctx.arc(cx, cy, cx - 4, 0, Math.PI * 2);
+      ctx.strokeStyle = '#05080c'; ctx.lineWidth = 16; ctx.stroke();
+
+      document.getElementById('live-calc').innerText = 
+        `D = (${curTarget.h}m × 1000) / ${mils.toFixed(1)}${angleSys === 'NATO' ? 'mil' : 'v'} = ${curDist} m`;
     }
 
-    function setAngleSystem(sys) {
-      currentSystem = sys;
-      document.getElementById('btn-nato').classList.toggle('active', sys === 'NATO');
-      document.getElementById('btn-warsaw').classList.toggle('active', sys === 'WARSAW');
+    function setTarget(t, h, name) {
+      curTarget = { type: t, h, name };
+      document.querySelectorAll('.btn-target-m').forEach(b => b.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+      document.getElementById('target-info-tag').innerText = `M = ${h} m`;
       drawReticle();
     }
 
-    function setTarget(type, h, e) {
-      currentTarget = { type, height: h };
-      document.querySelectorAll('.btn-target').forEach(b => b.classList.remove('active'));
-      if(e && e.currentTarget) e.currentTarget.classList.add('active');
+    function toggleSystem() {
+      angleSys = angleSys === 'NATO' ? 'WARSAW' : 'NATO';
+      document.getElementById('btn-sys-label').innerText = angleSys === 'NATO' ? 'NATO (6400)' : 'Varsói (6000)';
       drawReticle();
     }
 
-    function updateDistance(dist) {
-      currentDistance = parseInt(dist);
-      document.getElementById('dist-display').innerText = currentDistance + ' m';
+    function updateDistance(v) {
+      curDist = parseInt(v);
+      document.getElementById('dist-display').innerText = curDist + ' m';
       drawReticle();
     }
+
+    function startDrag(clientX, clientY) {
+      isDragging = true;
+      const rect = canvas.getBoundingClientRect();
+      dragStart = { 
+        x: (clientX - rect.left) * (canvas.width / rect.width) - targetOffset.x, 
+        y: (clientY - rect.top) * (canvas.height / rect.height) - targetOffset.y 
+      };
+    }
+    function moveDrag(clientX, clientY) {
+      if (!isDragging) return;
+      const rect = canvas.getBoundingClientRect();
+      targetOffset.x = (clientX - rect.left) * (canvas.width / rect.width) - dragStart.x;
+      targetOffset.y = (clientY - rect.top) * (canvas.height / rect.height) - dragStart.y;
+      drawReticle();
+    }
+
+    canvas.addEventListener('touchstart', (e) => startDrag(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+    window.addEventListener('touchmove', (e) => { if(isDragging) moveDrag(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+    window.addEventListener('touchend', () => isDragging = false);
+
+    canvas.addEventListener('mousedown', (e) => startDrag(e.clientX, e.clientY));
+    window.addEventListener('mousemove', (e) => { if(isDragging) moveDrag(e.clientX, e.clientY); });
+    window.addEventListener('mouseup', () => isDragging = false);
 
     // =====================================================
-    // 3. VETÜLETI ANIMÁCIÓ
+    // 3. VETÜLET-VIZUALIZÁCIÓ
     // =====================================================
     const pCanvas = document.getElementById('proj-canvas');
     const pCtx = pCanvas.getContext('2d');
-    let animState = 'sphere';
+    let animS = 'sphere';
 
-    function setAnimState(state, evt) {
-      animState = state;
-      document.querySelectorAll('.btn-anim').forEach(b => b.classList.remove('active'));
-      if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
-
-      const exp = document.getElementById('anim-explanation');
-      if (state === 'sphere') exp.innerText = '1. Gömbfelület: A Föld háromdimenziós gömb.';
-      else if (state === 'flatten') exp.innerText = '2. Narancshéj: Ha a gömböt kiterítjük, a szélei elszakadnak.';
-      else if (state === 'cylinder') exp.innerText = '3. Henger: Egy hengert fektetünk a Földre, egy meridián mentén.';
-      else if (state === 'zones') exp.innerText = '4. 60 UTM Zóna: A henger 6 fokonként körbefordul.';
+    function setAnimState(st) {
+      animS = st;
+      document.querySelectorAll('.btn-anim-m').forEach(b => b.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+      const d = document.getElementById('anim-desc');
+      if (st === 'sphere') d.innerText = '1. Gömbfelület: A Föld 3D-s gömb, a meridiánok a sarkoknál összefutnak.';
+      if (st === 'flatten') d.innerText = '2. Narancshéj: Ha síkba terítjük ki egyben, a sarkoknál szétszakad a felület.';
+      if (st === 'cylinder') d.innerText = '3. Henger: Egy hengerpalástot fektetünk egyetlen meridián érintőjére.';
+      if (st === 'zones') d.innerText = '4. 60 UTM Zóna: 6 fokonként forgatva 60 darab torzulásmentes síkszeletet kapunk.';
       drawProjection();
     }
 
@@ -721,72 +807,65 @@
       const w = pCanvas.width, h = pCanvas.height, cx = w/2, cy = h/2;
       pCtx.clearRect(0, 0, w, h);
 
-      if (animState === 'sphere') {
-        const r = 90;
+      if (animS === 'sphere') {
         pCtx.strokeStyle = '#38bdf8'; pCtx.lineWidth = 2;
-        pCtx.beginPath(); pCtx.arc(cx, cy, r, 0, Math.PI * 2); pCtx.stroke();
-        pCtx.lineWidth = 1; pCtx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
-        for (let i = -60; i <= 60; i += 30) {
+        pCtx.beginPath(); pCtx.arc(cx, cy, 75, 0, Math.PI*2); pCtx.stroke();
+        pCtx.strokeStyle = 'rgba(56, 189, 248, 0.3)';
+        pCtx.strokeRect(cx - 50, cy - 50, 100, 100);
+      } else if (animS === 'flatten') {
+        pCtx.strokeStyle = '#fbbf24'; pCtx.fillStyle = 'rgba(251, 191, 36, 0.15)';
+        for (let i = -2; i <= 2; i++) {
           pCtx.beginPath();
-          const yr = cy + (i / 90) * (r * 0.85);
-          const xr = Math.sqrt(Math.max(0, r*r - (yr - cy)*(yr - cy)));
-          pCtx.ellipse(cx, yr, xr, xr * 0.25, 0, 0, Math.PI * 2); pCtx.stroke();
-        }
-      } else if (animState === 'flatten') {
-        const petals = 6, petalW = 50;
-        pCtx.strokeStyle = '#fbbf24'; pCtx.fillStyle = 'rgba(251, 191, 36, 0.15)'; pCtx.lineWidth = 2;
-        const startX = cx - (petals * petalW) / 2;
-        for (let i = 0; i < petals; i++) {
-          const px = startX + i * petalW;
-          pCtx.beginPath();
-          pCtx.moveTo(px + petalW / 2, cy - 90);
-          pCtx.quadraticCurveTo(px + petalW, cy, px + petalW / 2, cy + 90);
-          pCtx.quadraticCurveTo(px, cy, px + petalW / 2, cy - 90);
+          pCtx.moveTo(cx + i*40, cy - 70);
+          pCtx.quadraticCurveTo(cx + i*40 + 20, cy, cx + i*40, cy + 70);
+          pCtx.quadraticCurveTo(cx + i*40 - 20, cy, cx + i*40, cy - 70);
           pCtx.fill(); pCtx.stroke();
         }
-      } else if (animState === 'cylinder') {
-        pCtx.strokeStyle = '#10b981'; pCtx.lineWidth = 2;
-        pCtx.strokeRect(cx - 70, cy - 110, 140, 220);
+      } else if (animS === 'cylinder') {
+        pCtx.strokeStyle = '#10b981'; pCtx.strokeRect(cx - 50, cy - 80, 100, 160);
         pCtx.strokeStyle = '#38bdf8';
-        pCtx.beginPath(); pCtx.arc(cx, cy, 70, 0, Math.PI * 2); pCtx.stroke();
-      } else if (animState === 'zones') {
-        pCtx.strokeStyle = '#475569'; pCtx.lineWidth = 1;
-        const zoneW = w / 20;
-        for (let i = 0; i < 20; i++) pCtx.strokeRect(i * zoneW, 30, zoneW, h - 60);
-        pCtx.fillStyle = 'rgba(0, 229, 255, 0.25)'; pCtx.strokeStyle = '#00e5ff'; pCtx.lineWidth = 2;
-        pCtx.fillRect(10 * zoneW, 30, zoneW * 2, h - 60);
-        pCtx.strokeRect(10 * zoneW, 30, zoneW * 2, h - 60);
-        pCtx.fillStyle = '#fff'; pCtx.font = 'bold 12px Chakra Petch';
-        pCtx.fillText('33N | 34N (Magyarország)', 10 * zoneW - 15, h - 15);
+        pCtx.beginPath(); pCtx.arc(cx, cy, 50, 0, Math.PI*2); pCtx.stroke();
+      } else if (animS === 'zones') {
+        pCtx.strokeStyle = '#475569';
+        for (let i = 0; i < 15; i++) pCtx.strokeRect(i * (w/15), 30, w/15, h - 60);
+        pCtx.fillStyle = 'rgba(0, 229, 255, 0.3)';
+        pCtx.fillRect(7 * (w/15), 30, 2 * (w/15), h - 60);
       }
     }
 
     // =====================================================
-    // 4. KVÍZ
+    // 4. KVÍZ LOGIKA
     // =====================================================
     function answerQuiz(qNum, optIdx, isCorrect) {
-      const qCard = document.getElementById(`q${qNum}`);
-      const options = qCard.querySelectorAll('.q-opt');
+      const card = document.getElementById(`q${qNum}`);
+      const opts = card.querySelectorAll('.q-opt-m');
       const exp = document.getElementById(`exp-${qNum}`);
-      options.forEach((opt, idx) => {
-        opt.disabled = true;
-        if (idx === optIdx) opt.classList.add(isCorrect ? 'correct' : 'wrong');
+      opts.forEach((o, i) => {
+        o.disabled = true;
+        if (i === optIdx) o.classList.add(isCorrect ? 'correct' : 'wrong');
       });
       exp.style.display = 'block';
     }
 
     // =====================================================
-    // 5. FÜLEK VÁLTÁSA
+    // 5. FÜLVÁLTÁS
     // =====================================================
-    function switchTab(tabId, evt) {
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-      if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+    function switchTab(tabId, index) {
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.d-nav-btn').forEach(b => b.classList.remove('active'));
+
       document.getElementById(tabId).classList.add('active');
 
-      if (tabId === 'tab-map') setTimeout(() => { if (map) map.invalidateSize(); }, 200);
-      else if (tabId === 'tab-reticle') setTimeout(drawReticle, 100);
-      else if (tabId === 'tab-theory') setTimeout(drawProjection, 100);
+      const mobileBtns = document.querySelectorAll('.nav-item');
+      if (mobileBtns[index]) mobileBtns[index].classList.add('active');
+
+      const desktopBtns = document.querySelectorAll('.d-nav-btn');
+      if (desktopBtns[index]) desktopBtns[index].classList.add('active');
+
+      if (tabId === 'tab-map') setTimeout(() => map.invalidateSize(), 200);
+      if (tabId === 'tab-reticle') setTimeout(drawReticle, 100);
+      if (tabId === 'tab-theory') setTimeout(drawProjection, 100);
     }
 
     window.addEventListener('DOMContentLoaded', () => {
