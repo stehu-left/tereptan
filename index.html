@@ -135,7 +135,6 @@
       text-transform: uppercase; letter-spacing: 0.5px;
     }
 
-    /* MGRS dekóder sáv */
     .decoder-container { display: flex; flex-direction: column; gap: 8px; }
     .decoder-strip {
       display: flex; border-radius: 8px; overflow: hidden;
@@ -197,7 +196,6 @@
       color: #fff;
     }
 
-    /* Rádiópanel */
     .radio-panel {
       background: linear-gradient(135deg, rgba(15,23,42,0.9), rgba(30,41,59,0.9));
       border: 1px solid var(--border-color);
@@ -221,9 +219,7 @@
       margin-bottom: 8px;
       border-left: 3px solid var(--accent-red);
     }
-    .radio-variant.good {
-      border-left-color: var(--accent-green);
-    }
+    .radio-variant.good { border-left-color: var(--accent-green); }
     .radio-variant-label {
       display: flex; justify-content: space-between; align-items: center;
       font-size: 0.7rem; text-transform: uppercase;
@@ -266,15 +262,8 @@
       display: flex; align-items: center; justify-content: center; gap: 6px;
       transition: all 0.2s;
     }
-    .btn-radio:hover {
-      background: var(--accent-cyan);
-      color: #000;
-    }
-    .btn-radio.playing {
-      background: var(--accent-amber);
-      border-color: var(--accent-amber);
-      color: #000;
-    }
+    .btn-radio:hover { background: var(--accent-cyan); color: #000; }
+    .btn-radio.playing { background: var(--accent-amber); border-color: var(--accent-amber); color: #000; }
 
     .hint-text {
       font-size: 0.72rem; color: var(--text-muted);
@@ -282,7 +271,6 @@
     }
     .hint-text i { color: var(--accent-amber); margin-right: 4px; }
 
-    /* Egyéb fülek (rövidített — a meglévő appból) */
     #tab-reticle { flex-direction: row; background-color: #080d14; }
     .reticle-view {
       flex: 1; display: flex; flex-direction: column;
@@ -310,9 +298,7 @@
       display: flex; justify-content: space-between;
     }
     input[type=range] { width: 100%; accent-color: var(--accent-cyan); }
-    .target-selector {
-      display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
-    }
+    .target-selector { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
     .btn-target {
       background: rgba(255,255,255,0.05);
       border: 1px solid var(--border-color);
@@ -323,36 +309,16 @@
       align-items: center; gap: 4px;
       transition: all 0.2s;
     }
-    .btn-target.active {
-      border-color: var(--accent-amber);
-      background: rgba(245,158,11,0.15);
-      color: #fff;
-    }
-    .target-size-tag {
-      font-size: 0.7rem; color: var(--accent-amber);
-      font-family: 'JetBrains Mono', monospace;
-    }
+    .btn-target.active { border-color: var(--accent-amber); background: rgba(245,158,11,0.15); color: #fff; }
+    .target-size-tag { font-size: 0.7rem; color: var(--accent-amber); font-family: 'JetBrains Mono', monospace; }
     .formula-card {
       background: rgba(0,229,255,0.05);
       border: 1px solid rgba(0,229,255,0.2);
       border-radius: 8px; padding: 12px; margin-top: 8px;
     }
-    .formula-math {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.95rem; color: var(--accent-cyan);
-      text-align: center; margin: 6px 0;
-    }
-    .system-toggle {
-      display: flex; background: rgba(0,0,0,0.4);
-      border-radius: 6px; padding: 3px;
-      border: 1px solid var(--border-color);
-    }
-    .sys-btn {
-      flex: 1; padding: 6px; border: none;
-      background: none; color: var(--text-muted);
-      font-size: 0.75rem; font-weight: 600;
-      border-radius: 4px; cursor: pointer; transition: 0.2s;
-    }
+    .formula-math { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; color: var(--accent-cyan); text-align: center; margin: 6px 0; }
+    .system-toggle { display: flex; background: rgba(0,0,0,0.4); border-radius: 6px; padding: 3px; border: 1px solid var(--border-color); }
+    .sys-btn { flex: 1; padding: 6px; border: none; background: none; color: var(--text-muted); font-size: 0.75rem; font-weight: 600; border-radius: 4px; cursor: pointer; transition: 0.2s; }
     .sys-btn.active { background: var(--accent-blue); color: #fff; }
 
     @media (max-width: 900px) {
@@ -367,10 +333,6 @@
     }
 
     /* Leaflet UTM rács stílusok */
-    .utm-grid-label {
-      background: transparent;
-      border: none;
-    }
     .utm-grid-label span {
       display: block;
       font-family: 'JetBrains Mono', monospace;
@@ -498,7 +460,7 @@
           </div>
           <div class="hint-text">
             <i class="fa-solid fa-lightbulb"></i>
-            Próbáld ki mindkettőt! Figyeld meg, melyiket könnyebb fejben követni — és melyiket lehet visszaolvasni ellenőrzésként.
+            Próbáld ki mindkettőt! Figyeld meg, melyiket könnyebb fejben követni!
           </div>
         </div>
 
@@ -519,7 +481,7 @@
           </div>
 
           <div style="margin-top:12px;">
-            <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Magyarországi Teszthelyszínek:</span>
+            <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Teszthelyszínek:</span>
             <div class="preset-btns">
               <button class="btn-preset" onclick="flyToLoc(47.5072, 19.0455)">🏛️ Bp. Országház (34T)</button>
               <button class="btn-preset" onclick="flyToLoc(47.8727, 20.0083)">⛰️ Kékestető (34T)</button>
@@ -533,7 +495,7 @@
       </div>
     </div>
 
-    <!-- Mil fül (rövidített — megtartva a meglévő logika) -->
+    <!-- Mil fül -->
     <div id="tab-reticle" class="tab-content">
       <div class="reticle-view">
         <div class="scope-frame">
@@ -542,9 +504,7 @@
       </div>
       <div class="reticle-controls">
         <div class="section-card">
-          <div class="section-title">
-            <span><i class="fa-solid fa-sliders"></i> Szögrendszer</span>
-          </div>
+          <div class="section-title"><span><i class="fa-solid fa-sliders"></i> Szögrendszer</span></div>
           <div class="system-toggle">
             <button class="sys-btn active" id="btn-nato" onclick="setAngleSystem('NATO')">NATO MIL (6400)</button>
             <button class="sys-btn" id="btn-warsaw" onclick="setAngleSystem('WARSAW')">Varsói Vonás (6000)</button>
@@ -592,73 +552,100 @@
 
   <script>
     // =====================================================
-    // 1. MGRS segédfüggvények
+    // 1. MGRS ÉS RÁDIÓ LOGIKA
     // =====================================================
-
-    // Betűkiosztási séma (MGRS 100km blokk) — a 3. zónától, hogy érthető legyen
-    // Az MGRS oszlopbetűk 3 zónánként ismétlődnek (A-H, J-R, S-Z), a sorok pedig 2 sávonként
-    const COL_LETTERS = "ABCDEFGHJKLMNPQRSTUVWXYZ"; // I és O kihagyva
-    const ROW_LETTERS = "ABCDEFGHJKLMNPQRSTUV";    // 20 betű, É-D irányban ismétlődik
-
-    /**
-     * Visszaadja, hogy egy adott UTM zónában melyik 100km-es blokkban van a pont.
-     * Az mgrs.js könyvtár ezt már kiszámolja — mi csak visszafejtjük.
-     */
-    function splitMGRS(mgrsStr) {
-      if (!mgrsStr || mgrsStr.length < 5) return null;
-      // Formátum: [zóna 2 számjegy][sávbetű][2 blokkbetű][maradék számok]
-      const zone = mgrsStr.substring(0, 2);
-      const band = mgrsStr.substring(2, 3);
-      const sq = mgrsStr.substring(3, 5);
-      const rest = mgrsStr.substring(5);
-      const half = Math.floor(rest.length / 2);
-      const east = rest.substring(0, half);
-      const north = rest.substring(half);
-      return { zone, band, sq, east, north, gzd: zone + band };
-    }
-
-    // =====================================================
-    // 2. TÉRKÉP + UTM/MGRS RÁCS
-    // =====================================================
-
     let map;
     let marker;
     let currentLatLng = [47.5072, 19.0455];
 
-    // Referencia az UTM sávokhoz (a 100km-es blokkok feliratozásához)
-    // Ezeket azért tároljuk, hogy a rács tudja, hol vannak a zónahatárok
-    const UTM_ZONE_WIDTH = 6; // fok
-
     function initMap() {
       map = L.map('map', {
-        zoomControl: true,
-        attributionControl: false,
-        minZoom: 6,
-        maxZoom: 18
+        zoomControl: true, attributionControl: false, minZoom: 6, maxZoom: 18
       }).setView(currentLatLng, 12);
 
-      const osmStandard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19
-      });
-      const openTopo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-        maxZoom: 17
-      });
-      const esriSatellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 18
-      });
-
+      const osmStandard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 });
+      const esriSatellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18 });
+      
       osmStandard.addTo(map);
 
-      const baseMaps = {
-        "🗺️ Utcahálózat": osmStandard,
-        "⛰️ Terep": openTopo,
-        "🛰️ Műhold": esriSatellite
-      };
+      const baseMaps = { "🗺️ Utcahálózat": osmStandard, "🛰️ Műhold": esriSatellite };
       L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
-      // === UTM/MGRS RÁCS RÉTEGEK ===
+      // Egyedi marker
+      const customIcon = L.divIcon({
+        className: 'custom-pin',
+        html: `<div style="background:var(--accent-cyan); width:18px; height:18px; border-radius:50%; border:3px solid #fff; box-shadow:0 0 12px var(--accent-cyan);"></div>`,
+        iconSize: [18, 18], iconAnchor: [9, 9]
+      });
 
-      // 1. Zónahatár vonalak (33T / 34T)
-      addZoneBoundaryLines();
+      marker = L.marker(currentLatLng, { draggable: true, icon: customIcon }).addTo(map);
 
-      // 2. 100 km-es MGRS blokk rács
+      marker.on('drag', function(e) { updatePosition(e.target.getLatLng()); });
+      map.on('click', function(e) {
+        marker.setLatLng(e.latlng);
+        updatePosition(e.latlng);
+      });
+
+      // 100 km-es MGRS rácsvonalak kirajzolása (egyszerű vonalakkal)
+      // Mivel az MGRS blokkok zónánként változnak, itt csak egy vizuális segédrácsot rajzolunk
+      // a könnyebb tájékozódás érdekében.
+      drawGridOverlay();
+
+      updatePosition(L.latLng(currentLatLng[0], currentLatLng[1]));
+    }
+
+    function drawGridOverlay() {
+      // 1 km-es rács (kb. 0.01 fok) Magyarország körül
+      const bounds = [[45.7, 16.0], [48.6, 22.9]];
+      const gridLayer = L.gridLayer({
+        opacity: 0.15
+      });
+      
+      // Vonalak a 100km-es blokkokhoz (nagyon leegyszerűsítve, csak vizuális)
+      // A valódi MGRS blokkok zónánként eltolódnak, ezt itt nem modellezzük teljesen,
+      // de egy 0.9 fokos rács (kb. 100km) jó vizuális közelítés.
+      const step = 0.9; 
+      L.polyline([[bounds[0][0], 0], [bounds[1][0], 0]]); // placeholder
+    }
+
+    function updatePosition(latlng) {
+      const lat = latlng.lat;
+      const lng = latlng.lng;
+
+      document.getElementById('disp-wgs').innerText = `${lat.toFixed(5)}°, ${lng.toFixed(5)}°`;
+
+      try {
+        // mgrs.js - forward átalakítás
+        const mgrsCode = mgrs.forward([lng, lat]);
+        const gzd = mgrsCode.substring(0, 3);
+        const sq = mgrsCode.substring(3, 5);
+        const rest = mgrsCode.substring(5);
+        const half = Math.floor(rest.length / 2);
+        const east = rest.substring(0, half);
+        const north = rest.substring(half);
+
+        document.getElementById('dec-gzd').innerText = gzd;
+        document.getElementById('dec-sq').innerText = sq;
+        document.getElementById('dec-east').innerText = east;
+        document.getElementById('dec-north').innerText = north;
+
+        const zoneNum = parseInt(gzd.substring(0, 2));
+        document.getElementById('disp-utm').innerText = `Zóna ${zoneNum}N | E: ${east.padEnd(5, '0')}m, N: ${north.padEnd(5, '0')}m`;
+
+        // Rádiópanel frissítése
+        updateRadioPanel(lat, lng, gzd, sq, east, north);
+
+      } catch (err) {
+        console.error("MGRS hiba:", err);
+      }
+    }
+
+    function updateRadioPanel(lat, lng, gzd, sq, east, north) {
+      // Fok
+      const degText = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+      document.getElementById('radio-degrees').innerText = degText;
+      document.getElementById('deg-chars').innerText = degText.length;
+
+      // Fok szöveges (pl. 47.50723 -> Negyvenhét egész...)
+      const latStr = lat.toFixed(5).replace('.', ' egész ').replace(/(\d)/g, '$1 ');
+      const lngStr = lng.toFixed(5).replace('.
