@@ -648,4 +648,173 @@
 
       // Fok szöveges (pl. 47.50723 -> Negyvenhét egész...)
       const latStr = lat.toFixed(5).replace('.', ' egész ').replace(/(\d)/g, '$1 ');
-      const lngStr = lng.toFixed(5).replace('.
+      const lngStr = lng.toFixed(5).replace('.', ' egész ').replace(/(\d)/g, '$1 ');
+      document.getElementById('radio-degrees-spoken').innerText = `„${latStr.trim()}, ${lngStr.trim()}”`;
+      document.getElementById('deg-time').innerText = `~${Math.ceil(degText.length / 2.5)} s`;
+
+      // MGRS
+      const mgrsShort = `${gzd} ${sq} ${east.substring(0,3)} ${north.substring(0,3)}`;
+      document.getElementById('radio-mgrs').innerText = mgrsShort;
+      document.getElementById('mgrs-chars').innerText = mgrsShort.length;
+
+      const spokenMgrs = `${gzd.split('').join('-')} ${sq.split('').join('-')}, ${east.substring(0,3).split('').join('-')}, ${north.substring(0,3).split('').join('-')}`;
+      document.getElementById('radio-mgrs-spoken').innerText = `„${spokenMgrs}”`;
+      document.getElementById('mgrs-time').innerText = `~${Math.ceil(mgrsShort.length / 3)} s`;
+    }
+
+    // === FELOLVASÁS (Web Speech API) ===
+    let currentUtterance = null;
+
+    function speakVariant(type) {
+      if (!('speechSynthesis' in window)) {
+        alert('A böngésződ nem támogatja a felolvasást.');
+        return;
+      }
+
+      // Leállítjuk az előzőt, ha volt
+      window.speechSynthesis.cancel();
+
+      const degBtn = document.getElementById('btn-listen-deg');
+      const mgrsBtn = document.getElementById('btn-listen-mgrs');
+      degBtn.classList.remove('playing');
+      mgrsBtn.classList.remove('playing');
+
+      let textToSpeak = '';
+      if (type === 'deg') {
+        textToSpeak = document.getElementById('radio-degrees-spoken').innerText.replace(/[„”]/g, '');
+        degBtn.classList.add('playing');
+      } else {
+        textToSpeak = document.getElementById('radio-mgrs-spoken').innerText.replace(/[„”]/g, '');
+        mgrsBtn.classList.add('playing');
+      }
+
+      currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
+      currentUtterance.lang = 'hu-HU';
+      currentUtterance.rate = 0.9;
+      currentUtterance.pitch = 1.0;
+
+      currentUtterance.onend = () => {
+        degBtn.classList.remove('playing');
+        mgrsBtn.classList.remove('playing');
+      };
+
+      window.speechSynthesis.speak(currentUtterance);
+    }
+
+    function flyToLoc(lat, lng) {
+      currentLatLng = [lat, lng];
+      map.flyTo(currentLatLng, 14, { duration: 1.2 });
+      marker.setLatLng(currentLatLng);
+      updatePosition(L.latLng(lat, lng));
+    }
+
+    // =====================================================
+    // 2. MIL / TÁVCSŐ LOGIKA
+    // =====================================================
+    const canvas = document.getElementById('reticle-canvas');
+    const ctx = canvas.getContext('2d');
+    let currentSystem = 'NATO';
+    let currentTarget = { type: 'truck', height: 2.5 };
+    let currentDistance = 500;
+
+    function drawReticle() {
+      const w = canvas.width; const h = canvas.height;
+      const cx = w / 2; const cy = h / 2;
+      ctx.clearRect(0, 0, w, h);
+
+      // Háttér
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, '#111e38'); grad.addColorStop(0.65, '#22334d'); grad.addColorStop(0.66, '#18241b'); grad.addColorStop(1, '#0c140e');
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
+
+      // Szálkereszt számítás
+      const pixelsPerMil = 18;
+      const rad = currentTarget.height / currentDistance;
+      const mils = currentSystem === 'NATO' ? (rad * (6400 / (2 * Math.PI))) : (rad * (6000 / (2 * Math.PI)));
+      const targetPixelH = mils * pixelsPerMil;
+
+      // Célpont kirajzolása
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.25)';
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.rect(cx - (targetPixelH * 1.2)/2, cy - targetPixelH, targetPixelH * 1.2, targetPixelH);
+      ctx.fill(); ctx.stroke();
+
+      // Szálkereszt
+      ctx.strokeStyle = '#ef4444';
+      ctx.fillStyle = '#ef4444';
+      ctx.lineWidth = 1.5;
+      ctx.font = '11px JetBrains Mono';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      ctx.beginPath();
+      ctx.moveTo(cx, 0); ctx.lineTo(cx, h);
+      ctx.moveTo(0, cy); ctx.lineTo(w, cy);
+      ctx.stroke();
+
+      // Skála
+      for (let i = -16; i <= 16; i++) {
+        if (i === 0) continue;
+        const tickDist = i * pixelsPerMil;
+        const isMajor = (i % 5 === 0);
+        const tickLen = isMajor ? 14 : 7;
+        
+        ctx.beginPath();
+        ctx.moveTo(cx - tickLen / 2, cy - tickDist);
+        ctx.lineTo(cx + tickLen / 2, cy - tickDist);
+        ctx.stroke();
+
+        if (isMajor) ctx.fillText(Math.abs(i), cx + 18, cy - tickDist);
+      }
+
+      // Képlet frissítése
+      document.getElementById('live-calc').innerText = `${currentDistance} m = (${currentTarget.height} m × 1000) / ${mils.toFixed(1)}`;
+    }
+
+    function setAngleSystem(sys) {
+      currentSystem = sys;
+      document.getElementById('btn-nato').classList.toggle('active', sys === 'NATO');
+      document.getElementById('btn-warsaw').classList.toggle('active', sys === 'WARSAW');
+      drawReticle();
+    }
+
+    function setTarget(type, h, e) {
+      currentTarget = { type, height: h };
+      document.querySelectorAll('.btn-target').forEach(b => b.classList.remove('active'));
+      if(e && e.currentTarget) e.currentTarget.classList.add('active');
+      drawReticle();
+    }
+
+    function updateDistance(dist) {
+      currentDistance = parseInt(dist);
+      document.getElementById('dist-display').innerText = currentDistance + ' m';
+      drawReticle();
+    }
+
+    // =====================================================
+    // 3. FÜLEK VÁLTÁSA
+    // =====================================================
+    function switchTab(tabId, evt) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+      if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+      document.getElementById(tabId).classList.add('active');
+
+      if (tabId === 'tab-map') {
+        setTimeout(() => { if (map) map.invalidateSize(); }, 200);
+      } else if (tabId === 'tab-reticle') {
+        setTimeout(drawReticle, 100);
+      }
+    }
+
+    // Inicializálás
+    window.addEventListener('DOMContentLoaded', () => {
+      initMap();
+      drawReticle();
+    });
+  </script>
+</body>
+</html>
