@@ -1,104 +1,164 @@
+/* ==========================================================
+   Vonás / Mil Távcső modul stílusai (Javított)
+   ========================================================== */
+
 .reticle-screen {
-  padding: 16px; 
-  display: flex; 
-  flex-direction: column; 
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
-  max-width: 650px; 
-  margin: 0 auto; 
+  max-width: 650px;
+  margin: 0 auto;
   width: 100%;
 }
 
-.scope-box {
-  width: 100%; 
-  max-width: 380px; 
-  aspect-ratio: 1 / 1; 
-  margin: 0 auto;
-  border-radius: 50%; 
-  overflow: hidden; 
-  border: 6px solid #202b3c;
-  box-shadow: 0 0 25px rgba(0, 0, 0, 0.8); 
-  position: relative; 
-  touch-action: none;
+/* Megakadályozzuk a távcső rugalmas összenyomását */
+.reticle-screen > div:first-child {
+  flex-shrink: 0;
 }
 
-#reticle-canvas { width: 100%; height: 100%; display: block; }
+.scope-box {
+  width: 100%;
+  max-width: 380px;
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 6px solid #202b3c;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.8);
+  position: relative;
+  touch-action: none;
+  background: #0f172a;
+}
+
+#reticle-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
 
 .system-selector-row {
-  display: flex; 
-  background: rgba(0,0,0,0.3); 
+  display: flex;
+  background: rgba(0, 0, 0, 0.3);
   border-radius: 8px;
-  padding: 3px; 
-  border: 1px solid var(--border-color); 
+  padding: 3px;
+  border: 1px solid var(--border-color);
   margin-bottom: 12px;
 }
 
 .sys-tab-btn {
-  flex: 1; 
-  padding: 8px; 
-  border: none; 
-  background: none; 
+  flex: 1;
+  padding: 8px;
+  border: none;
+  background: none;
   color: var(--text-muted);
-  font-size: 0.75rem; 
-  font-weight: 600; 
-  border-radius: 6px; 
-  cursor: pointer; 
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
   transition: 0.2s;
 }
 
 .sys-tab-btn.active {
-  background: var(--accent-blue); 
-  color: #fff; 
+  background: var(--accent-blue);
+  color: #fff;
   box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4);
 }
 
-.target-chips { 
-  display: grid; 
-  grid-template-columns: repeat(3, 1fr); 
-  gap: 8px; 
+.target-chips {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
 }
 
 .btn-target-m {
-  background: rgba(255, 255, 255, 0.05); 
-  border: 1px solid var(--border-color); 
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
   color: #cbd5e1;
-  padding: 10px 4px; 
-  border-radius: 6px; 
-  font-size: 0.75rem; 
-  display: flex; 
+  padding: 10px 4px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  display: flex;
   flex-direction: column;
-  align-items: center; 
-  gap: 4px; 
+  align-items: center;
+  gap: 4px;
   cursor: pointer;
+  transition: 0.2s;
 }
 
-.btn-target-m.active { 
-  background: rgba(245, 158, 11, 0.18); 
-  border-color: var(--accent-amber); 
-  color: #fff; 
+.btn-target-m.active {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: var(--accent-amber);
+  color: #fff;
 }
 
-.range-wrap { display: flex; flex-direction: column; gap: 6px; }
-.range-label { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); }
-input[type=range] { width: 100%; height: 30px; accent-color: var(--accent-cyan); }
+.target-tag {
+  color: var(--accent-amber);
+  font-size: 0.75rem;
+}
+
+.range-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.range-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.dist-val {
+  color: var(--accent-cyan);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+input[type=range] {
+  width: 100%;
+  height: 30px;
+  accent-color: var(--accent-cyan);
+}
 
 .formula-banner {
-  background: rgba(0, 229, 255, 0.06); 
+  background: rgba(0, 229, 255, 0.06);
   border: 1px solid rgba(0, 229, 255, 0.25);
-  border-radius: 6px; 
-  padding: 12px; 
+  border-radius: 6px;
+  padding: 12px;
   text-align: center;
+  margin-top: 12px;
 }
 
-.formula-math { 
-  font-family: 'JetBrains Mono', monospace; 
-  font-size: 0.95rem; 
-  color: var(--accent-cyan); 
-  font-weight: 700; 
-  margin-top: 4px; 
+.formula-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.formula-math {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
+  color: var(--accent-cyan);
+  font-weight: 700;
+  margin-top: 4px;
 }
 
 @media (min-width: 900px) {
-  .reticle-screen { flex-direction: row; max-width: 1000px; align-items: center; gap: 30px; height: 100%; }
-  .scope-box { max-width: 440px; flex: 1; }
-  .reticle-screen .m-card { flex: 1; }
+  .reticle-screen {
+    flex-direction: row;
+    max-width: 1000px;
+    align-items: center;
+    gap: 30px;
+    height: 100%;
+    padding-top: 30px;
+  }
+  .scope-box {
+    max-width: 440px;
+    flex: 0 0 auto;
+    margin: 0;
+  }
+  .reticle-screen .m-card {
+    flex: 1;
+  }
 }
