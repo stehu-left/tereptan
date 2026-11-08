@@ -1,0 +1,179 @@
+/* ==========================================================
+   Küldetés mód stílusai
+   ========================================================== */
+
+.mission-screen {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+  padding-bottom: 50px;
+}
+
+.mission-stats {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--accent-amber);
+  font-weight: 700;
+}
+
+.mission-intro {
+  font-size: 0.85rem;
+  color: #cbd5e1;
+  line-height: 1.6;
+}
+.mission-intro strong {
+  color: var(--accent-cyan);
+}
+
+/* A célpont kártya */
+.mission-target-card {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(15, 23, 42, 0.95));
+  border: 2px solid var(--accent-blue);
+  text-align: center;
+}
+.mission-target-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.mission-target-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  letter-spacing: 2px;
+  margin: 8px 0;
+}
+.mission-target-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+.mission-target-hint i {
+  color: var(--accent-amber);
+}
+
+/* A játéktér */
+.mission-map-container {
+  width: 100%;
+  height: 400px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid var(--border-color);
+  position: relative;
+  background: #0f172a;
+}
+#mission-map {
+  width: 100%;
+  height: 100%;
+}
+
+/* Visszajelzés */
+.mission-feedback {
+  text-align: center;
+  border-width: 2px;
+  transition: all 0.3s ease;
+}
+.mission-feedback.success {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: var(--accent-green);
+}
+.mission-feedback.error {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: var(--accent-red);
+}
+#mission-feedback-text {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.mission-feedback.success #mission-feedback-text {
+  color: var(--accent-green);
+}
+.mission-feedback.error #mission-feedback-text {
+  color: var(--accent-red);
+}
+#mission-feedback-detail {
+  font-size: 0.85rem;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+
+/* Vezérlők */
+.mission-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.btn-mission {
+  flex: 1;
+  min-width: 140px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  color: #cbd5e1;
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: 0.2s;
+}
+.btn-mission:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+.btn-mission.primary {
+  background: rgba(0, 229, 255, 0.15);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+.btn-mission.primary:hover {
+  background: var(--accent-cyan);
+  color: #000;
+}
+
+/* Statisztika */
+.mission-scoreboard {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  text-align: center;
+}
+.score-item {
+  background: rgba(0, 0, 0, 0.25);
+  padding: 10px;
+  border-radius: 6px;
+}
+.score-label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.score-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  margin-top: 4px;
+}
+
+@media (max-width: 600px) {
+  .mission-map-container { height: 300px; }
+  .mission-target-code { font-size: 1.3rem; }
+}
