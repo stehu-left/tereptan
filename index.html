@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   
-  <!-- MGRS.js & Proj4js (A pontos geodéziai UTM/MGRS átszámításhoz) -->
+  <!-- MGRS.js & Proj4js -->
   <script src="https://cdn.jsdelivr.net/npm/mgrs@1.0.0/dist/mgrs.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
   
@@ -111,7 +111,7 @@
     .nav-item i { font-size: 1.15rem; }
     .nav-item.active { color: var(--accent-cyan); }
 
-    /* TÉRKÉP ÉS RÁCS KONTÉNER */
+    /* TÉRKÉP SZEKCIÓ */
     #tab-map { overflow: hidden; }
     .map-container {
       width: 100%; height: 46vh; min-height: 240px; position: relative;
@@ -119,12 +119,22 @@
     }
     #map { width: 100%; height: 100%; }
 
-    .zoom-level-badge {
+    /* DIDAKTIKUS ZOOM ÉS RÁCS INFO PANEL (2.2 és 2.3 javítás) */
+    .zoom-level-card {
       position: absolute; bottom: 12px; left: 12px; z-index: 500;
-      background: rgba(15, 23, 42, 0.88); border: 1px solid var(--accent-cyan);
+      background: rgba(15, 23, 42, 0.92); border: 1px solid var(--accent-cyan);
+      border-radius: 6px; padding: 6px 12px; max-width: calc(100% - 24px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.7); pointer-events: none;
+    }
+    .zoom-title-row {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .zoom-badge {
       color: var(--accent-cyan); font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem; font-weight: 700; padding: 5px 10px; border-radius: 4px;
-      pointer-events: none; box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+      font-size: 0.72rem; font-weight: 700;
+    }
+    .zoom-desc {
+      font-size: 0.68rem; color: #cbd5e1; margin-top: 2px; line-height: 1.3;
     }
 
     .map-data-scroll {
@@ -203,7 +213,7 @@
     }
     .chip-btn:hover, .chip-btn:active { background: rgba(0, 229, 255, 0.2); border-color: var(--accent-cyan); color: #fff; }
 
-    /* PONTOS MGRS RÁCS CÍMKÉK */
+    /* RÁCS CÍMKÉK */
     .grid-label-gzd {
       background: rgba(15, 23, 42, 0.9); border: 2px solid var(--accent-blue);
       color: #60a5fa; font-family: 'Chakra Petch', sans-serif; font-size: 15px; font-weight: 700;
@@ -238,6 +248,20 @@
       box-shadow: 0 0 25px rgba(0, 0, 0, 0.8); position: relative; touch-action: none;
     }
     #reticle-canvas { width: 100%; height: 100%; display: block; }
+
+    /* SZÖGRENDSZER VÁLTÓ (2.4 javítás) */
+    .system-selector-row {
+      display: flex; background: rgba(0,0,0,0.3); border-radius: 8px;
+      padding: 3px; border: 1px solid var(--border-color); margin-bottom: 12px;
+    }
+    .sys-tab-btn {
+      flex: 1; padding: 8px; border: none; background: none; color: var(--text-muted);
+      font-size: 0.75rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: 0.2s;
+    }
+    .sys-tab-btn.active {
+      background: var(--accent-blue); color: #fff; box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4);
+    }
+
     .target-chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
     .btn-target-m {
       background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: #cbd5e1;
@@ -245,6 +269,7 @@
       align-items: center; gap: 4px; cursor: pointer;
     }
     .btn-target-m.active { background: rgba(245, 158, 11, 0.18); border-color: var(--accent-amber); color: #fff; }
+
     .range-wrap { display: flex; flex-direction: column; gap: 6px; }
     .range-label { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); }
     input[type=range] { width: 100%; height: 30px; accent-color: var(--accent-cyan); }
@@ -335,7 +360,12 @@
     <div id="tab-map" class="tab-content active">
       <div class="map-container">
         <div id="map"></div>
-        <div class="zoom-level-badge" id="zoom-status">ZOOM: 12 (10 km rács)</div>
+        <div class="zoom-level-card">
+          <div class="zoom-title-row">
+            <span class="zoom-badge" id="zoom-status">ZOOM: 12</span>
+          </div>
+          <div class="zoom-desc" id="zoom-desc">10×10 km-es navigációs háló (középszintű tájékozódás)</div>
+        </div>
       </div>
       <div class="map-data-scroll">
         
@@ -421,16 +451,23 @@
 
         <div class="m-card">
           <div class="m-card-title">
-            <span>🎯 Célpont & Skálaválasztás</span>
+            <span>🎯 Célpont & Optika Beállítás</span>
             <span id="target-info-tag" style="color:var(--accent-amber); font-size:0.75rem;">M = 2.5 m</span>
           </div>
+
+          <!-- Különálló szögrendszer választó (2.4 javítás) -->
+          <div class="system-selector-row">
+            <button class="sys-tab-btn active" id="btn-sys-nato" onclick="setAngleSystem('NATO')">NATO MIL (6400 vonás / kör)</button>
+            <button class="sys-tab-btn" id="btn-sys-warsaw" onclick="setAngleSystem('WARSAW')">Varsói Vonás (6000 vonás / kör)</button>
+          </div>
+
+          <!-- Célpont chipek (2.4 és 2.5 javítás) -->
           <div class="target-chips">
-            <button class="btn-target-m active" onclick="setTarget('truck', 2.5, 'Teherautó')"><i class="fa-solid fa-truck"></i> Teherautó (2.5m)</button>
-            <button class="btn-target-m" onclick="setTarget('tank', 2.8, 'Harckocsi')"><i class="fa-solid fa-shield-halved"></i> Harckocsi (2.8m)</button>
-            <button class="btn-target-m" onclick="setTarget('soldier', 1.8, 'Katona')"><i class="fa-solid fa-person-rifle"></i> Katona (1.8m)</button>
-            <button class="btn-target-m" onclick="setTarget('tree', 5.0, 'Fa / Vadles')"><i class="fa-solid fa-tree"></i> Fa / Les (5.0m)</button>
-            <button class="btn-target-m" onclick="setTarget('tower', 25.0, 'Templom')"><i class="fa-solid fa-gopuram"></i> Templom (25m)</button>
-            <button class="btn-target-m" onclick="toggleSystem()"><i class="fa-solid fa-rotate"></i> <span id="btn-sys-label">NATO (6400)</span></button>
+            <button class="btn-target-m active" data-target="truck" onclick="setTarget('truck', 2.5, 'Teherautó', this)"><i class="fa-solid fa-truck"></i> Teherautó (2.5m)</button>
+            <button class="btn-target-m" data-target="tank" onclick="setTarget('tank', 2.8, 'Harckocsi', this)"><i class="fa-solid fa-shield-halved"></i> Harckocsi (2.8m)</button>
+            <button class="btn-target-m" data-target="soldier" onclick="setTarget('soldier', 1.8, 'Katona', this)"><i class="fa-solid fa-person-rifle"></i> Katona (1.8m)</button>
+            <button class="btn-target-m" data-target="tree" onclick="setTarget('tree', 5.0, 'Fa / Vadles', this)"><i class="fa-solid fa-tree"></i> Fa / Les (5.0m)</button>
+            <button class="btn-target-m" data-target="tower" onclick="setTarget('tower', 25.0, 'Templom', this)"><i class="fa-solid fa-gopuram"></i> Templom (25m)</button>
           </div>
 
           <div class="range-wrap" style="margin-top:14px;">
@@ -458,10 +495,10 @@
             <canvas id="proj-canvas" width="600" height="340"></canvas>
           </div>
           <div class="anim-btn-row" style="margin-top:10px;">
-            <button class="btn-anim-m active" onclick="setAnimState('sphere')">1. Gömbi Föld</button>
-            <button class="btn-anim-m" onclick="setAnimState('flatten')">2. Narancshéj Kiterítés</button>
-            <button class="btn-anim-m" onclick="setAnimState('cylinder')">3. Érintő Henger</button>
-            <button class="btn-anim-m" onclick="setAnimState('zones')">4. 60 UTM Zóna</button>
+            <button class="btn-anim-m active" onclick="setAnimState('sphere', this)">1. Gömbi Föld</button>
+            <button class="btn-anim-m" onclick="setAnimState('flatten', this)">2. Narancshéj Kiterítés</button>
+            <button class="btn-anim-m" onclick="setAnimState('cylinder', this)">3. Érintő Henger</button>
+            <button class="btn-anim-m" onclick="setAnimState('zones', this)">4. 60 UTM Zóna</button>
           </div>
           <p id="anim-desc" style="font-size:0.8rem; color:var(--accent-cyan); margin-top:10px; line-height:1.5;">
             A Föld gömbölyű: fokos koordinátákkal síkban nem lehet pontos távolságot mérni torzulás nélkül.
@@ -532,11 +569,15 @@
     let currentLatLng = [47.5072, 19.0455];
     let dynamicGridLayer;
 
-    // Proj4 definíciók a Magyarországot érintő két zónára (WGS84 UTM 33N és 34N)
-    proj4.defs([
-      ['EPSG:32633', '+proj=utm +zone=33 +datum=WGS84 +units=m +no_defs'],
-      ['EPSG:32634', '+proj=utm +zone=34 +datum=WGS84 +units=m +no_defs']
-    ]);
+    // 2.1 JAVÍTÁS: Valódi globális UTM szélességi sávbetű kiszámítása (-80-tól +84-ig)
+    // Az I és O betűk kimaradnak; 72° felett a sáv 12° széles (X sáv)
+    function getUTMBandLetter(lat) {
+      if (lat < -80 || lat > 84) return '';
+      if (lat >= 72) return 'X';
+      const letters = 'CDEFGHJKLMNPQRSTUVWX'; // I és O szigorúan kizárva
+      const idx = Math.floor((lat + 80) / 8);
+      return letters[Math.min(idx, letters.length - 2)];
+    }
 
     function initMap() {
       map = L.map('map', { zoomControl: false, attributionControl: false, minZoom: 4, maxZoom: 18 }).setView(currentLatLng, 12);
@@ -566,43 +607,44 @@
       updateDynamicGrid();
     }
 
-    // --- VALÓDI MGRS MÉTERRÁCS MOTORJA ---
+    // --- DINAMIKUS RÁCSMOTOR (2.2 és 2.3 javítás) ---
     function updateDynamicGrid() {
       if (!dynamicGridLayer) return;
       dynamicGridLayer.clearLayers();
 
       const zoom = map.getZoom();
       const bounds = map.getBounds();
-      const status = document.getElementById('zoom-status');
+      const statusBadge = document.getElementById('zoom-status');
+      const statusDesc = document.getElementById('zoom-desc');
 
-      // 1. SZINT: KONTINENS NÉZET (Zoom 4 - 6) -> 6° UTM Zónák & 8° Sávok (GZD)
       if (zoom <= 6) {
-        status.innerText = `ZOOM: ${zoom} (UTM Zónák & Sávok)`;
+        statusBadge.innerText = `ZOOM: ${zoom} (UTM Zónák & Sávok)`;
+        statusDesc.innerText = 'Globális felosztás: 6° hosszúsági szeletek × 8° szélességi sávok (GZD).';
         drawGZDLevel(bounds);
       }
-      // 2. SZINT: ORSZÁGOS NÉZET (Zoom 7 - 9) -> Pontos 100.000 méteres MGRS blokkok
       else if (zoom >= 7 && zoom <= 9) {
-        status.innerText = `ZOOM: ${zoom} (Valódi 100 km MGRS Blokkok)`;
+        statusBadge.innerText = `ZOOM: ${zoom} (100 km MGRS Blokkok)`;
+        statusDesc.innerText = 'Zónán belüli 100×100 km-es négyzetek katonai kétbetűs azonosítóval (pl. CT).';
         drawMetricMGRSGrid(bounds, 100000, '100k');
       }
-      // 3. SZINT: TÉRSÉGI NÉZET (Zoom 10 - 12) -> Pontos 10.000 méteres rács
       else if (zoom >= 10 && zoom <= 12) {
-        status.innerText = `ZOOM: ${zoom} (Valódi 10 km Rácsháló)`;
+        statusBadge.innerText = `ZOOM: ${zoom} (10 km Rácsháló)`;
+        statusDesc.innerText = '10×10 km-es navigációs háló (középszintű csapatmozgás és tájékozódás).';
         drawMetricMGRSGrid(bounds, 10000, '10k');
       }
-      // 4. SZINT: RÉSZLETES TOPOGRÁFIAI NÉZET (Zoom 13+) -> Pontos 1.000 méteres tüzérségi rács
       else {
-        status.innerText = `ZOOM: ${zoom} (Valódi 1 km Tüzérségi Méterrács)`;
+        statusBadge.innerText = `ZOOM: ${zoom} (1 km Tüzérségi Méterrács)`;
+        statusDesc.innerText = 'A vonalszámok (00–99) a 100 km-es blokk bal alsó sarkától mért km-ek. Ebből áll össze a 4 jegyű koordináta!';
         drawMetricMGRSGrid(bounds, 1000, '1k');
       }
     }
 
-    // 1. Zóna szint (Gömbi 6° szeletek és 8° sávok)
+    // 1. Zóna szint helyes sávbetű-kiszámítással
     function drawGZDLevel(b) {
       const minLng = Math.floor(b.getWest() / 6) * 6;
       const maxLng = Math.ceil(b.getEast() / 6) * 6;
-      const minLat = Math.max(32, Math.floor(b.getSouth() / 8) * 8);
-      const maxLat = Math.min(64, Math.ceil(b.getNorth() / 8) * 8);
+      const minLat = Math.max(-80, Math.floor(b.getSouth() / 8) * 8);
+      const maxLat = Math.min(84, Math.ceil(b.getNorth() / 8) * 8);
 
       for (let lng = minLng; lng <= maxLng; lng += 6) {
         L.polyline([[minLat, lng], [maxLat, lng]], { color: '#3b82f6', weight: 2, opacity: 0.75, dashArray: '8, 8' }).addTo(dynamicGridLayer);
@@ -614,9 +656,9 @@
       for (let lng = minLng; lng < maxLng; lng += 6) {
         for (let lat = minLat; lat < maxLat; lat += 8) {
           const zNum = Math.floor((lng + 180) / 6) + 1;
-          const band = lat >= 48 ? 'U' : (lat >= 40 ? 'T' : 'S');
+          const band = getUTMBandLetter(lat + 4);
           const center = [lat + 4, lng + 3];
-          if (b.contains(center)) {
+          if (b.contains(center) && band) {
             L.marker(center, {
               icon: L.divIcon({ className: 'grid-label-gzd', html: `${zNum}${band}`, iconSize: [50, 30], iconAnchor: [25, 15] }),
               interactive: false
@@ -626,9 +668,8 @@
       }
     }
 
-    // 2., 3., 4. SZINTEK: VALÓDI UTM MÉTERALAPÚ RÁCS GENERÁLÁSA
+    // 2., 3., 4. Szintek: Valódi UTM méteralapú háló
     function drawMetricMGRSGrid(bounds, stepMeters, type) {
-      // Megállapítjuk, mely UTM zónák láthatók a kijelzőn (Magyarországon a 33 és 34)
       const minZone = Math.max(1, Math.floor((bounds.getWest() + 180) / 6) + 1);
       const maxZone = Math.min(60, Math.floor((bounds.getEast() + 180) / 6) + 1);
 
@@ -637,7 +678,6 @@
         const zoneLngMin = (zone - 1) * 6 - 180;
         const zoneLngMax = zone * 6 - 180;
 
-        // Kivágjuk a zóna határait a képernyőre
         const west = Math.max(bounds.getWest(), zoneLngMin);
         const east = Math.min(bounds.getEast(), zoneLngMax);
         if (west >= east) continue;
@@ -645,7 +685,6 @@
         const south = Math.max(-80, bounds.getSouth());
         const north = Math.min(84, bounds.getNorth());
 
-        // Átváltjuk a sarokpontokat a zóna métereire
         const swM = proj4('EPSG:4326', utmProj, [west, south]);
         const seM = proj4('EPSG:4326', utmProj, [east, south]);
         const nwM = proj4('EPSG:4326', utmProj, [west, north]);
@@ -656,23 +695,20 @@
         const minN = Math.floor(Math.min(swM[1], seM[1], nwM[1], neM[1]) / stepMeters) * stepMeters;
         const maxN = Math.ceil(Math.max(swM[1], seM[1], nwM[1], neM[1]) / stepMeters) * stepMeters;
 
-        // Vonalak stílusa a felbontástól függően
         const lineStyle = type === '100k' 
           ? { color: '#10b981', weight: 1.8, opacity: 0.65 }
           : (type === '10k' 
               ? { color: '#f59e0b', weight: 1.2, opacity: 0.45, dashArray: '4, 4' }
               : { color: '#ef4444', weight: 1.1, opacity: 0.4 });
 
-        // Függőleges métervonalak (Easting)
+        // Keleti vonalak
         for (let e = minE; e <= maxE; e += stepMeters) {
           const ptSouth = proj4(utmProj, 'EPSG:4326', [e, minN]);
           const ptNorth = proj4(utmProj, 'EPSG:4326', [e, maxN]);
 
-          // Csak a zónán belül húzzuk meg
           if (ptSouth[0] >= zoneLngMin - 0.1 && ptSouth[0] <= zoneLngMax + 0.1) {
             L.polyline([[ptSouth[1], ptSouth[0]], [ptNorth[1], ptNorth[0]]], lineStyle).addTo(dynamicGridLayer);
 
-            // 1 km-es szintnél a szám felirata a vonal tetejére (kétjegyű tüzérségi szám)
             if (type === '1k' && bounds.contains([ptNorth[1], ptNorth[0]])) {
               const kmNum = String(Math.floor((e % 100000) / 1000)).padStart(2, '0');
               L.marker([ptNorth[1], ptNorth[0]], {
@@ -683,14 +719,13 @@
           }
         }
 
-        // Vízszintes métervonalak (Northing)
+        // Északi vonalak
         for (let n = minN; n <= maxN; n += stepMeters) {
           const ptWest = proj4(utmProj, 'EPSG:4326', [minE, n]);
           const ptEast = proj4(utmProj, 'EPSG:4326', [maxE, n]);
 
           L.polyline([[ptWest[1], ptWest[0]], [ptEast[1], ptEast[0]]], lineStyle).addTo(dynamicGridLayer);
 
-          // 1 km-es szintnél a szám felirata a vonal szélére
           if (type === '1k' && bounds.contains([ptWest[1], ptWest[0]])) {
             const kmNum = String(Math.floor((n % 100000) / 1000)).padStart(2, '0');
             L.marker([ptWest[1], ptWest[0]], {
@@ -700,7 +735,7 @@
           }
         }
 
-        // Címkék elhelyezése a blokkok belsejében (100k és 10k szinteken)
+        // Címkék elhelyezése (100k és 10k)
         if (type === '100k' || type === '10k') {
           for (let e = minE; e < maxE; e += stepMeters) {
             for (let n = minN; n < maxN; n += stepMeters) {
@@ -732,7 +767,6 @@
       }
     }
 
-    // Pozíció frissítése a marker mozgatásakor
     function updatePos(ll) {
       document.getElementById('disp-wgs').innerText = `${ll.lat.toFixed(4)}°, ${ll.lng.toFixed(4)}°`;
       try {
@@ -812,7 +846,7 @@
     }
 
     // =====================================================
-    // 2. VONÁS / MIL SZIMULÁTOR
+    // 2. VONÁS / MIL SZIMULÁTOR (2.4 és 2.5 javítás)
     // =====================================================
     const canvas = document.getElementById('reticle-canvas');
     const ctx = canvas.getContext('2d');
@@ -884,17 +918,20 @@
         `D = (${curTarget.h}m × 1000) / ${mils.toFixed(1)}${angleSys === 'NATO' ? 'mil' : 'v'} = ${curDist} m`;
     }
 
-    function setTarget(t, h, name) {
+    // 2.5 JAVÍTÁS: Explicit gombelem átadás, nincs globális 'event'
+    function setTarget(t, h, name, btnEl) {
       curTarget = { type: t, h, name };
       document.querySelectorAll('.btn-target-m').forEach(b => b.classList.remove('active'));
-      event.currentTarget.classList.add('active');
+      if (btnEl) btnEl.classList.add('active');
       document.getElementById('target-info-tag').innerText = `M = ${h} m`;
       drawReticle();
     }
 
-    function toggleSystem() {
-      angleSys = angleSys === 'NATO' ? 'WARSAW' : 'NATO';
-      document.getElementById('btn-sys-label').innerText = angleSys === 'NATO' ? 'NATO (6400)' : 'Varsói (6000)';
+    // 2.4 JAVÍTÁS: Letisztult szögrendszer váltó
+    function setAngleSystem(sys) {
+      angleSys = sys;
+      document.getElementById('btn-sys-nato').classList.toggle('active', sys === 'NATO');
+      document.getElementById('btn-sys-warsaw').classList.toggle('active', sys === 'WARSAW');
       drawReticle();
     }
 
@@ -929,16 +966,16 @@
     window.addEventListener('mouseup', () => isDragging = false);
 
     // =====================================================
-    // 3. VETÜLET-VIZUALIZÁCIÓ
+    // 3. VETÜLET-VIZUALIZÁCIÓ (2.5 javítás: nincs 'event')
     // =====================================================
     const pCanvas = document.getElementById('proj-canvas');
     const pCtx = pCanvas.getContext('2d');
     let animS = 'sphere';
 
-    function setAnimState(st) {
+    function setAnimState(st, btnEl) {
       animS = st;
       document.querySelectorAll('.btn-anim-m').forEach(b => b.classList.remove('active'));
-      event.currentTarget.classList.add('active');
+      if (btnEl) btnEl.classList.add('active');
       const d = document.getElementById('anim-desc');
       if (st === 'sphere') d.innerText = '1. Gömbfelület: A Föld 3D-s gömb, a meridiánok a sarkoknál összefutnak.';
       if (st === 'flatten') d.innerText = '2. Narancshéj: Ha síkba terítjük ki egyben, a sarkoknál szétszakad a felület.';
