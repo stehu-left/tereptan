@@ -22,6 +22,7 @@
   <link rel="stylesheet" href="css/map.css">
   <link rel="stylesheet" href="css/reticle.css">
   <link rel="stylesheet" href="css/theory-quiz.css">
+  <link rel="stylesheet" href="css/mission.css">
 </head>
 <body>
 
@@ -48,6 +49,9 @@
       </button>
       <button class="d-nav-btn" onclick="switchTab('tab-quiz', 3)">
         <i class="fa-solid fa-clipboard-question"></i> Gyakorlás
+      </button>
+	  <button class="d-nav-btn" onclick="switchTab('tab-mission', 4)">
+        <i class="fa-solid fa-flag-checkered"></i> Küldetés
       </button>
     </nav>
 
@@ -249,6 +253,73 @@
           <div class="q-exp-m" id="exp-3"><strong>Helyes!</strong> „Először be a házba (vízszintes), utána fel a lépcsőn (függőleges).”</div>
         </div>
       </div>
+	</div>
+	
+	<!-- 5. KÜLDETÉS MÓD -->
+    <div id="tab-mission" class="tab-content">
+      <div class="mission-screen">
+
+        <div class="m-card">
+          <div class="m-card-title">
+            <span><i class="fa-solid fa-flag-checkered"></i> Terepi Küldetés</span>
+            <span id="mission-stats" class="mission-stats">0 / 0</span>
+          </div>
+          <p class="mission-intro">
+            Kapsz egy MGRS koordinátát. Keresd meg a térképen, és <strong>kattints a helyes 100 m-es négyzetre!</strong>
+            A zöld jelölő mutatja, hova kattintottál.
+          </p>
+        </div>
+
+        <!-- A küldetés kártya (a célponttal) -->
+        <div class="m-card mission-target-card" id="mission-target-card">
+          <div class="mission-target-label">KERESD MEG EZT A PONTOT:</div>
+          <div class="mission-target-code" id="mission-target-code">34T CT 528 634</div>
+          <div class="mission-target-hint" id="mission-target-hint">
+            <i class="fa-solid fa-lightbulb"></i>
+            <span>Tipp: először a zónát, aztán a 100 km-es blokkot, aztán a 100 m-es négyzetet.</span>
+          </div>
+        </div>
+
+        <!-- A játéktér (térkép) -->
+        <div class="mission-map-container">
+          <div id="mission-map"></div>
+        </div>
+
+        <!-- Visszajelzés -->
+        <div class="m-card mission-feedback" id="mission-feedback" style="display:none;">
+          <div id="mission-feedback-text"></div>
+          <div id="mission-feedback-detail"></div>
+        </div>
+
+        <!-- Vezérlők -->
+        <div class="mission-controls">
+          <button class="btn-mission primary" id="btn-mission-next" onclick="nextMission()" style="display:none;">
+            <i class="fa-solid fa-arrow-right"></i> Következő küldetés
+          </button>
+          <button class="btn-mission" onclick="startNewMission()">
+            <i class="fa-solid fa-rotate"></i> Új küldetés indítása
+          </button>
+          <button class="btn-mission" onclick="showMissionHint()">
+            <i class="fa-solid fa-lightbulb"></i> Segítség
+          </button>
+        </div>
+
+        <!-- Statisztika -->
+        <div class="m-card mission-scoreboard">
+          <div class="score-item">
+            <div class="score-label">Teljesített</div>
+            <div class="score-value" id="score-correct">0</div>
+          </div>
+          <div class="score-item">
+            <div class="score-label">Próbálkozás</div>
+            <div class="score-value" id="score-attempts">0</div>
+          </div>
+          <div class="score-item">
+            <div class="score-label">Pontosság</div>
+            <div class="score-value" id="score-accuracy">—</div>
+          </div>
+        </div>
+      </div>
     </div>
   </main>
 
@@ -258,6 +329,7 @@
     <button class="nav-item" onclick="switchTab('tab-reticle', 1)"><i class="fa-solid fa-crosshairs"></i><span>Mil Távcső</span></button>
     <button class="nav-item" onclick="switchTab('tab-theory', 2)"><i class="fa-solid fa-earth-americas"></i><span>Vetület</span></button>
     <button class="nav-item" onclick="switchTab('tab-quiz', 3)"><i class="fa-solid fa-clipboard-question"></i><span>Kvíz</span></button>
+	<button class="nav-item" onclick="switchTab('tab-mission', 4)"><i class="fa-solid fa-flag-checkered"></i><span>Küldetés</span></button>
   </nav>
 
   <!-- Moduláris szkriptek meghatározott betöltési sorrendben -->
@@ -267,6 +339,7 @@
   <script src="js/reticle.js"></script>
   <script src="js/projection.js"></script>
   <script src="js/quiz.js"></script>
+  <script src="js/mission.js"></script>
   <script src="js/tabs.js"></script>
   <script src="js/main.js"></script>
 </body>
