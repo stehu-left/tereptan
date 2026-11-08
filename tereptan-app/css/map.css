@@ -248,16 +248,19 @@
   pointer-events: none;
 }
 .grid-label-1k {
-  background: rgba(15, 23, 42, 0.75); 
+  background: rgba(15, 23, 42, 0.85);
   border: 1px solid var(--accent-red);
-  color: #f87171; 
-  font-family: 'JetBrains Mono', monospace; 
-  font-size: 9px; 
+  color: #f87171;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
   font-weight: 700;
-  padding: 1px 3px; 
-  border-radius: 3px; 
-  white-space: nowrap; 
+  line-height: 14px;
+  text-align: center;
+  padding: 1px 3px;
+  border-radius: 3px;
+  white-space: nowrap;
   pointer-events: none;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
 }
 
 @media (min-width: 900px) {
