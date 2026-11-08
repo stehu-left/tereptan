@@ -255,12 +255,22 @@ function updatePositionCoordinates(ll) {
     document.getElementById('dec-sq').innerText = sq;
     document.getElementById('dec-east').innerText = e;
     document.getElementById('dec-north').innerText = n;
-    document.getElementById('disp-utm').innerText = `Zóna ${gzd} E: ${e.padEnd(5, '0')}m, N: ${n.padEnd(5, '0')}m`;
+
+    // --- JAVÍTÁS: a teljes UTM northing kiszámítása proj4-gyel ---
+    const zoneNum = parseInt(gzd.substring(0, 2), 10);
+    const bandLetter = gzd.substring(2, 3);
+    const utmProj = `+proj=utm +zone=${zoneNum} +datum=WGS84 +units=m +no_defs`;
+    const utmCoords = proj4('EPSG:4326', utmProj, [ll.lng, ll.lat]);
+    const fullEasting = Math.round(utmCoords[0]);
+    const fullNorthing = Math.round(utmCoords[1]);
+
+    document.getElementById('disp-utm').innerText =
+      `Zóna ${zoneNum}${bandLetter} E: ${fullEasting}m, N: ${fullNorthing}m`;
 
     renderPrecisionLadder(gzd, sq, e, n);
     updateRadioPanelData(ll.lat, ll.lng, gzd, sq, e, n);
-  } catch(err) { 
-    console.error(err); 
+  } catch(err) {
+    console.error(err);
   }
 }
 
