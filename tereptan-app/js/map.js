@@ -107,22 +107,30 @@ function drawGZDLevel(b) {
 }
 
 function drawMetricMGRSGrid(bounds, stepMeters, type) {
+  // Megállapítjuk az érintett zónákat a látható területből
   const minZone = Math.max(1, Math.floor((bounds.getWest() + 180) / 6) + 1);
   const maxZone = Math.min(60, Math.floor((bounds.getEast() + 180) / 6) + 1);
+
+  const bNorth = bounds.getNorth();
+  const bSouth = bounds.getSouth();
+  const bWest = bounds.getWest();
+  const bEast = bounds.getEast();
+  const latSpan = bNorth - bSouth;
+  const lngSpan = bEast - bWest;
 
   for (let zone = minZone; zone <= maxZone; zone++) {
     const utmProj = `+proj=utm +zone=${zone} +datum=WGS84 +units=m +no_defs`;
     const zoneLngMin = (zone - 1) * 6 - 180;
     const zoneLngMax = zone * 6 - 180;
 
-    const west = Math.max(bounds.getWest(), zoneLngMin);
-    const east = Math.min(bounds.getEast(), zoneLngMax);
+    const west = Math.max(bWest - lngSpan * 0.1, zoneLngMin);
+    const east = Math.min(bEast + lngSpan * 0.1, zoneLngMax);
     if (west >= east) continue;
 
-    const south = Math.max(-80, bounds.getSouth() - 0.02);
-    const north = Math.min(84, bounds.getNorth() + 0.02);
+    const south = Math.max(-80, bSouth - latSpan * 0.1);
+    const north = Math.min(84, bNorth + latSpan * 0.1);
 
-    // Képernyősarkok átváltása UTM méterekre
+    // Képernyő sarokpontjainak konvertálása méterre
     const swM = proj4('EPSG:4326', utmProj, [west, south]);
     const seM = proj4('EPSG:4326', utmProj, [east, south]);
     const nwM = proj4('EPSG:4326', utmProj, [west, north]);
@@ -134,61 +142,58 @@ function drawMetricMGRSGrid(bounds, stepMeters, type) {
     const maxN = Math.ceil(Math.max(swM[1], seM[1], nwM[1], neM[1]) / stepMeters) * stepMeters;
 
     const lineStyle = type === '100k' 
-      ? { color: '#10b981', weight: 1.8, opacity: 0.65 }
+      ? { color: '#10b981', weight: 1.8, opacity: 0.7 }
       : (type === '10k' 
-          ? { color: '#f59e0b', weight: 1.2, opacity: 0.45, dashArray: '4, 4' }
-          : { color: '#ef4444', weight: 1.1, opacity: 0.45 });
+          ? { color: '#f59e0b', weight: 1.2, opacity: 0.5, dashArray: '4, 4' }
+          : { color: '#ef4444', weight: 1.2, opacity: 0.55 });
 
-    // Címkék rögzített pozíciója a képernyő pereméhez közel (méterben számolva)
-    const labelNorthM = maxN - stepMeters * 0.35;
-    const labelWestM  = minE + stepMeters * 0.35;
-
-    // 1. FÜGGŐLEGES (EASTING) RÁCSVONALAK ÉS CÍMKÉK
+    // 1. FÜGGŐLEGES (EASTING) RÁCSVONALAK
     for (let e = minE; e <= maxE; e += stepMeters) {
-      const ptSouth = proj4(utmProj, 'EPSG:4326', [e, minN]);
-      const ptNorth = proj4(utmProj, 'EPSG:4326', [e, maxN]);
+      const pS = proj4(utmProj, 'EPSG:4326', [e, minN]);
+      const pN = proj4(utmProj, 'EPSG:4326', [e, maxN]);
 
-      // Csak akkor húzzuk meg, ha a zónán belül fut
-      if (ptSouth[0] >= zoneLngMin - 0.05 && ptSouth[0] <= zoneLngMax + 0.05) {
-        L.polyline([[ptSouth[1], ptSouth[0]], [ptNorth[1], ptNorth[0]]], lineStyle).addTo(dynamicGridLayer);
+      L.polyline([[pS[1], pS[0]], [pN[1], pN[0]]], lineStyle).addTo(dynamicGridLayer);
 
-        // 1 km-es szintnél szám a felső szegély mentén
-        if (type === '1k') {
-          const labelGeo = proj4(utmProj, 'EPSG:4326', [e, labelNorthM]);
-          if (bounds.contains([labelGeo[1], labelGeo[0]])) {
-            const kmNum = String(Math.floor((e % 100000) / 1000)).padStart(2, '0');
-            L.marker([labelGeo[1], labelGeo[0]], {
-              icon: L.divIcon({ 
-                className: 'grid-label-1k', 
-                html: kmNum, 
-                iconSize: [22, 16], 
-                iconAnchor: [11, 8] 
-              }),
-              interactive: false
-            }).addTo(dynamicGridLayer);
-          }
+      // 1 km felirat: közvetlenül a látható felső szegély alá rajzoljuk
+      if (type === '1k') {
+        const topLat = bNorth - latSpan * 0.04;
+        const topGeo = proj4(utmProj, 'EPSG:4326', [e, proj4('EPSG:4326', utmProj, [pS[0], topLat])[1]]);
+
+        if (topGeo[0] >= bWest && topGeo[0] <= bEast) {
+          const kmNum = String(Math.floor((e % 100000) / 1000)).padStart(2, '0');
+          L.marker([topLat, topGeo[0]], {
+            icon: L.divIcon({
+              className: 'grid-label-1k',
+              html: kmNum,
+              iconSize: [22, 16],
+              iconAnchor: [11, 8]
+            }),
+            interactive: false
+          }).addTo(dynamicGridLayer);
         }
       }
     }
 
-    // 2. VÍZSZINTES (NORTHING) RÁCSVONALAK ÉS CÍMKÉK
+    // 2. VÍZSZINTES (NORTHING) RÁCSVONALAK
     for (let n = minN; n <= maxN; n += stepMeters) {
-      const ptWest = proj4(utmProj, 'EPSG:4326', [minE, n]);
-      const ptEast = proj4(utmProj, 'EPSG:4326', [maxE, n]);
+      const pW = proj4(utmProj, 'EPSG:4326', [minE, n]);
+      const pE = proj4(utmProj, 'EPSG:4326', [maxE, n]);
 
-      L.polyline([[ptWest[1], ptWest[0]], [ptEast[1], ptEast[0]]], lineStyle).addTo(dynamicGridLayer);
+      L.polyline([[pW[1], pW[0]], [pE[1], pE[0]]], lineStyle).addTo(dynamicGridLayer);
 
-      // 1 km-es szintnél szám a bal szegély mentén
+      // 1 km felirat: közvetlenül a látható bal szegély mellé rajzoljuk
       if (type === '1k') {
-        const labelGeo = proj4(utmProj, 'EPSG:4326', [labelWestM, n]);
-        if (bounds.contains([labelGeo[1], labelGeo[0]])) {
+        const leftLng = bWest + lngSpan * 0.04;
+        const leftGeo = proj4(utmProj, 'EPSG:4326', [proj4('EPSG:4326', utmProj, [leftLng, pW[1]])[0], n]);
+
+        if (leftGeo[1] >= bSouth && leftGeo[1] <= bNorth) {
           const kmNum = String(Math.floor((n % 100000) / 1000)).padStart(2, '0');
-          L.marker([labelGeo[1], labelGeo[0]], {
-            icon: L.divIcon({ 
-              className: 'grid-label-1k', 
-              html: kmNum, 
-              iconSize: [22, 16], 
-              iconAnchor: [11, 8] 
+          L.marker([leftGeo[1], leftLng], {
+            icon: L.divIcon({
+              className: 'grid-label-1k',
+              html: kmNum,
+              iconSize: [22, 16],
+              iconAnchor: [11, 8]
             }),
             interactive: false
           }).addTo(dynamicGridLayer);
@@ -202,7 +207,7 @@ function drawMetricMGRSGrid(bounds, stepMeters, type) {
         for (let n = minN; n < maxN; n += stepMeters) {
           const centerGeo = proj4(utmProj, 'EPSG:4326', [e + stepMeters / 2, n + stepMeters / 2]);
 
-          if (bounds.contains([centerGeo[1], centerGeo[0]]) && centerGeo[0] >= zoneLngMin && centerGeo[0] <= zoneLngMax) {
+          if (bounds.contains([centerGeo[1], centerGeo[0]])) {
             try {
               const code = mgrs.forward(centerGeo);
               const sq = code.substring(3, 5);
