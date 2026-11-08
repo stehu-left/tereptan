@@ -26,10 +26,15 @@ function switchTab(tabId, index) {
   if (tabId === 'tab-reticle') setTimeout(drawReticleView, 100);
   if (tabId === 'tab-theory') setTimeout(drawProjectionView, 100);
 
-  // ÚJ: Küldetés térkép újraméretezése
-  if (tabId === 'tab-mission' && missionMap) {
+  // ÚJ: Küldetés térkép - lazy init + újraméretezés
+  if (tabId === 'tab-mission') {
     setTimeout(() => {
-      missionMap.invalidateSize();
-    }, 200);
+      if (!missionMap && typeof initMissionModule === 'function') {
+        initMissionModule();
+      }
+      if (missionMap) {
+        missionMap.invalidateSize();
+      }
+    }, 250);
   }
 }
