@@ -20,4 +20,9 @@ window.addEventListener('DOMContentLoaded', () => {
   if (typeof initTheoryModule === 'function') {
     initTheoryModule();
   }
+  
+    // Küldetés modul indítása
+  if (typeof initMissionModule === 'function') {
+    initMissionModule();
+  }
 });
