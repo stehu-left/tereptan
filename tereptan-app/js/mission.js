@@ -178,8 +178,10 @@ function startNewMission() {
 
   // Állapot visszaállítása
   missionAnswered = false;
-  document.getElementById('btn-mission-next').style.display = 'none';
-  document.getElementById('mission-feedback').style.display = 'none';
+  const nextBtn = document.getElementById('btn-mission-next');
+  if (nextBtn) nextBtn.style.display = 'none';
+  const fb = document.getElementById('mission-feedback');
+  if (fb) fb.style.display = 'none';
 
   // Cél MGRS kódja (100 m-es pontossággal)
   let targetCode;
@@ -205,16 +207,16 @@ function startNewMission() {
   document.getElementById('mission-target-hint').innerHTML =
     `<i class="fa-solid fa-lightbulb"></i><span>${missionCurrentTarget.hint}</span>`;
 
-  // Térkép mozgatása egy áttekintő nézetbe (nem a célra, hogy ne legyen túl könnyű)
-  missionMap.setView([47.5, 19.0], 7);
-
-  // Ha volt jelölő, eltávolítjuk
-  if (missionMarker) {
-    missionMap.removeLayer(missionMarker);
-    missionMarker = null;
+  // Térkép mozgatása - CSAK ha már létezik
+  if (missionMap) {
+    missionMap.setView([47.5, 19.0], 7);
+    // Ha volt jelölő, eltávolítjuk
+    if (missionMarker) {
+      missionMap.removeLayer(missionMarker);
+      missionMarker = null;
+    }
   }
 }
-
 // Segítség gomb
 function showMissionHint() {
   if (!missionCurrentTarget) return;
