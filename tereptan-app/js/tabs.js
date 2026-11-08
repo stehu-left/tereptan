@@ -25,3 +25,14 @@ function switchTab(tabId, index) {
   if (tabId === 'tab-reticle') setTimeout(drawReticleView, 100);
   if (tabId === 'tab-theory') setTimeout(drawProjectionView, 100);
 }
+
+// Eseménykezelők hozzárendelése a HTML gombokhoz
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('[data-tab]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const tabId = this.getAttribute('data-tab');
+      const index = parseInt(this.getAttribute('data-index'), 10);
+      switchTab(tabId, index);
+    });
+  });
+});
