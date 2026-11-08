@@ -15,7 +15,7 @@ let missionBlockShown = false;
 
 // Pontossági szint: 3 = 1 km, 4 = 100 m, 5 = 10 m, 6 = 1 m
 // 5 = 1 méter pontosság (a legszigorúbb, katonai szabvány)
-const MISSION_ACCURACY = 5;
+const MISSION_ACCURACY = 3;
 
 // Előre definiált magyarországi célpontok
 const MISSION_TARGETS = [
