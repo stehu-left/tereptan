@@ -4,25 +4,27 @@
  */
 
 window.addEventListener('DOMContentLoaded', () => {
-  // Térkép modul indítása (a js/map.js-ben van az initMapModule)
+  // Térkép modul indítása
   if (typeof initMapModule === 'function') {
     initMapModule();
   } else {
     console.error('HIBA: initMapModule nem található. Ellenőrizd, hogy a js/map.js betöltődött-e!');
   }
 
-  // Távcső modul indítása (a js/reticle.js-ben van az initReticleModule)
+  // Távcső modul indítása
   if (typeof initReticleModule === 'function') {
     initReticleModule();
   }
 
-  // Vetület modul indítása (a js/projection.js-ben van az initTheoryModule)
+  // Vetület modul indítása
   if (typeof initTheoryModule === 'function') {
     initTheoryModule();
   }
-  
-    // Küldetés modul indítása
+
+  // Küldetés modul indítása
   if (typeof initMissionModule === 'function') {
     initMissionModule();
+  } else {
+    console.error('HIBA: initMissionModule nem található. Ellenőrizd, hogy a js/mission.js betöltődött-e!');
   }
 });
