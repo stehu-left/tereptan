@@ -119,10 +119,10 @@ function drawMetricMGRSGrid(bounds, stepMeters, type) {
     const east = Math.min(bounds.getEast(), zoneLngMax);
     if (west >= east) continue;
 
-    // A látható képernyőkivágat (pufferrel, hogy gördítéskor se ugorjon ki)
     const south = Math.max(-80, bounds.getSouth() - 0.02);
     const north = Math.min(84, bounds.getNorth() + 0.02);
 
+    // Képernyősarkok átváltása UTM méterekre
     const swM = proj4('EPSG:4326', utmProj, [west, south]);
     const seM = proj4('EPSG:4326', utmProj, [east, south]);
     const nwM = proj4('EPSG:4326', utmProj, [west, north]);
@@ -137,21 +137,24 @@ function drawMetricMGRSGrid(bounds, stepMeters, type) {
       ? { color: '#10b981', weight: 1.8, opacity: 0.65 }
       : (type === '10k' 
           ? { color: '#f59e0b', weight: 1.2, opacity: 0.45, dashArray: '4, 4' }
-          : { color: '#ef4444', weight: 1.1, opacity: 0.4 });
+          : { color: '#ef4444', weight: 1.1, opacity: 0.45 });
 
-    // 1. FÜGGŐLEGES (EASTING) RÁCSVONALAK
+    // Címkék rögzített pozíciója a képernyő pereméhez közel (méterben számolva)
+    const labelNorthM = maxN - stepMeters * 0.35;
+    const labelWestM  = minE + stepMeters * 0.35;
+
+    // 1. FÜGGŐLEGES (EASTING) RÁCSVONALAK ÉS CÍMKÉK
     for (let e = minE; e <= maxE; e += stepMeters) {
       const ptSouth = proj4(utmProj, 'EPSG:4326', [e, minN]);
       const ptNorth = proj4(utmProj, 'EPSG:4326', [e, maxN]);
 
+      // Csak akkor húzzuk meg, ha a zónán belül fut
       if (ptSouth[0] >= zoneLngMin - 0.05 && ptSouth[0] <= zoneLngMax + 0.05) {
         L.polyline([[ptSouth[1], ptSouth[0]], [ptNorth[1], ptNorth[0]]], lineStyle).addTo(dynamicGridLayer);
 
-        // 1 km-es szintnél a szám a képernyő látható felső éléhez igazítva
+        // 1 km-es szintnél szám a felső szegély mentén
         if (type === '1k') {
-          const visibleNorthLat = bounds.getNorth() - (bounds.getNorth() - bounds.getSouth()) * 0.05;
-          const labelGeo = proj4(utmProj, 'EPSG:4326', [e, proj4('EPSG:4326', utmProj, [ptNorth[0], visibleNorthLat])[1]]);
-          
+          const labelGeo = proj4(utmProj, 'EPSG:4326', [e, labelNorthM]);
           if (bounds.contains([labelGeo[1], labelGeo[0]])) {
             const kmNum = String(Math.floor((e % 100000) / 1000)).padStart(2, '0');
             L.marker([labelGeo[1], labelGeo[0]], {
@@ -168,18 +171,16 @@ function drawMetricMGRSGrid(bounds, stepMeters, type) {
       }
     }
 
-    // 2. VÍZSZINTES (NORTHING) RÁCSVONALAK
+    // 2. VÍZSZINTES (NORTHING) RÁCSVONALAK ÉS CÍMKÉK
     for (let n = minN; n <= maxN; n += stepMeters) {
       const ptWest = proj4(utmProj, 'EPSG:4326', [minE, n]);
       const ptEast = proj4(utmProj, 'EPSG:4326', [maxE, n]);
 
       L.polyline([[ptWest[1], ptWest[0]], [ptEast[1], ptEast[0]]], lineStyle).addTo(dynamicGridLayer);
 
-      // 1 km-es szintnél a szám a képernyő látható bal széléhez igazítva
+      // 1 km-es szintnél szám a bal szegély mentén
       if (type === '1k') {
-        const visibleWestLng = bounds.getWest() + (bounds.getEast() - bounds.getWest()) * 0.05;
-        const labelGeo = proj4(utmProj, 'EPSG:4326', [proj4('EPSG:4326', utmProj, [visibleWestLng, ptWest[1]])[0], n]);
-
+        const labelGeo = proj4(utmProj, 'EPSG:4326', [labelWestM, n]);
         if (bounds.contains([labelGeo[1], labelGeo[0]])) {
           const kmNum = String(Math.floor((n % 100000) / 1000)).padStart(2, '0');
           L.marker([labelGeo[1], labelGeo[0]], {
@@ -199,8 +200,7 @@ function drawMetricMGRSGrid(bounds, stepMeters, type) {
     if (type === '100k' || type === '10k') {
       for (let e = minE; e < maxE; e += stepMeters) {
         for (let n = minN; n < maxN; n += stepMeters) {
-          const centerM = [e + stepMeters / 2, n + stepMeters / 2];
-          const centerGeo = proj4(utmProj, 'EPSG:4326', centerM);
+          const centerGeo = proj4(utmProj, 'EPSG:4326', [e + stepMeters / 2, n + stepMeters / 2]);
 
           if (bounds.contains([centerGeo[1], centerGeo[0]]) && centerGeo[0] >= zoneLngMin && centerGeo[0] <= zoneLngMax) {
             try {
