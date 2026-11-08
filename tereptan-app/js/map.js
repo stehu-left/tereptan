@@ -119,8 +119,9 @@ function drawMetricMGRSGrid(bounds, stepMeters, type) {
     const east = Math.min(bounds.getEast(), zoneLngMax);
     if (west >= east) continue;
 
-    const south = Math.max(-80, bounds.getSouth());
-    const north = Math.min(84, bounds.getNorth());
+    // A látható képernyőkivágat (pufferrel, hogy gördítéskor se ugorjon ki)
+    const south = Math.max(-80, bounds.getSouth() - 0.02);
+    const north = Math.min(84, bounds.getNorth() + 0.02);
 
     const swM = proj4('EPSG:4326', utmProj, [west, south]);
     const seM = proj4('EPSG:4326', utmProj, [east, south]);
@@ -138,38 +139,63 @@ function drawMetricMGRSGrid(bounds, stepMeters, type) {
           ? { color: '#f59e0b', weight: 1.2, opacity: 0.45, dashArray: '4, 4' }
           : { color: '#ef4444', weight: 1.1, opacity: 0.4 });
 
+    // 1. FÜGGŐLEGES (EASTING) RÁCSVONALAK
     for (let e = minE; e <= maxE; e += stepMeters) {
       const ptSouth = proj4(utmProj, 'EPSG:4326', [e, minN]);
       const ptNorth = proj4(utmProj, 'EPSG:4326', [e, maxN]);
 
-      if (ptSouth[0] >= zoneLngMin - 0.1 && ptSouth[0] <= zoneLngMax + 0.1) {
+      if (ptSouth[0] >= zoneLngMin - 0.05 && ptSouth[0] <= zoneLngMax + 0.05) {
         L.polyline([[ptSouth[1], ptSouth[0]], [ptNorth[1], ptNorth[0]]], lineStyle).addTo(dynamicGridLayer);
 
-        if (type === '1k' && bounds.contains([ptNorth[1], ptNorth[0]])) {
-          const kmNum = String(Math.floor((e % 100000) / 1000)).padStart(2, '0');
-          L.marker([ptNorth[1], ptNorth[0]], {
-            icon: L.divIcon({ className: 'grid-label-1k', html: kmNum, iconSize: [20, 16], iconAnchor: [10, 8] }),
-            interactive: false
-          }).addTo(dynamicGridLayer);
+        // 1 km-es szintnél a szám a képernyő látható felső éléhez igazítva
+        if (type === '1k') {
+          const visibleNorthLat = bounds.getNorth() - (bounds.getNorth() - bounds.getSouth()) * 0.05;
+          const labelGeo = proj4(utmProj, 'EPSG:4326', [e, proj4('EPSG:4326', utmProj, [ptNorth[0], visibleNorthLat])[1]]);
+          
+          if (bounds.contains([labelGeo[1], labelGeo[0]])) {
+            const kmNum = String(Math.floor((e % 100000) / 1000)).padStart(2, '0');
+            L.marker([labelGeo[1], labelGeo[0]], {
+              icon: L.divIcon({ 
+                className: 'grid-label-1k', 
+                html: kmNum, 
+                iconSize: [22, 16], 
+                iconAnchor: [11, 8] 
+              }),
+              interactive: false
+            }).addTo(dynamicGridLayer);
+          }
         }
       }
     }
 
+    // 2. VÍZSZINTES (NORTHING) RÁCSVONALAK
     for (let n = minN; n <= maxN; n += stepMeters) {
       const ptWest = proj4(utmProj, 'EPSG:4326', [minE, n]);
       const ptEast = proj4(utmProj, 'EPSG:4326', [maxE, n]);
 
       L.polyline([[ptWest[1], ptWest[0]], [ptEast[1], ptEast[0]]], lineStyle).addTo(dynamicGridLayer);
 
-      if (type === '1k' && bounds.contains([ptWest[1], ptWest[0]])) {
-        const kmNum = String(Math.floor((n % 100000) / 1000)).padStart(2, '0');
-        L.marker([ptWest[1], ptWest[0]], {
-          icon: L.divIcon({ className: 'grid-label-1k', html: kmNum, iconSize: [20, 16], iconAnchor: [10, 8] }),
-          interactive: false
-        }).addTo(dynamicGridLayer);
+      // 1 km-es szintnél a szám a képernyő látható bal széléhez igazítva
+      if (type === '1k') {
+        const visibleWestLng = bounds.getWest() + (bounds.getEast() - bounds.getWest()) * 0.05;
+        const labelGeo = proj4(utmProj, 'EPSG:4326', [proj4('EPSG:4326', utmProj, [visibleWestLng, ptWest[1]])[0], n]);
+
+        if (bounds.contains([labelGeo[1], labelGeo[0]])) {
+          const kmNum = String(Math.floor((n % 100000) / 1000)).padStart(2, '0');
+          L.marker([labelGeo[1], labelGeo[0]], {
+            icon: L.divIcon({ 
+              className: 'grid-label-1k', 
+              html: kmNum, 
+              iconSize: [22, 16], 
+              iconAnchor: [11, 8] 
+            }),
+            interactive: false
+          }).addTo(dynamicGridLayer);
+        }
       }
     }
 
+    // 3. 100 km ÉS 10 km BLOKKCÍMKÉK
     if (type === '100k' || type === '10k') {
       for (let e = minE; e < maxE; e += stepMeters) {
         for (let n = minN; n < maxN; n += stepMeters) {
