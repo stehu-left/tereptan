@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Tereptan & Térképészet Laboratórium</title>
+  
+  <!-- Külső könyvtárak (CDN) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/mgrs@1.0.0/dist/mgrs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
+  
+  <!-- Ikonok és betűkészletek -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+  <!-- Moduláris CSS fájlok -->
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/map.css">
+  <link rel="stylesheet" href="css/reticle.css">
+  <link rel="stylesheet" href="css/theory-quiz.css">
+</head>
+<body>
+
+  <!-- Fejléc -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon"><i class="fa-solid fa-crosshairs"></i></div>
+      <div class="brand-text">
+        <h1>TEREPTAN & TÉRKÉPÉSZET</h1>
+        <p>Valódi MGRS Méterrács • Mil / Vonás Rendszerek</p>
+      </div>
+    </div>
+
+    <!-- Asztali felső menü -->
+    <nav class="desktop-nav">
+      <button class="d-nav-btn active" onclick="switchTab('tab-map', 0)">
+        <i class="fa-solid fa-map-location-dot"></i> Térkép & MGRS
+      </button>
+      <button class="d-nav-btn" onclick="switchTab('tab-reticle', 1)">
+        <i class="fa-solid fa-crosshairs"></i> Mil Távcső
+      </button>
+      <button class="d-nav-btn" onclick="switchTab('tab-theory', 2)">
+        <i class="fa-solid fa-earth-americas"></i> Vetület
+      </button>
+      <button class="d-nav-btn" onclick="switchTab('tab-quiz', 3)">
+        <i class="fa-solid fa-clipboard-question"></i> Gyakorlás
+      </button>
+    </nav>
+
+    <div class="badge-mil"><i class="fa-solid fa-satellite-dish"></i> OKTATÓI ESZKÖZ</div>
+  </header>
+
+  <!-- Fő tartalom -->
+  <main>
+    <!-- 1. TÉRKÉP & MGRS NÉZET -->
+    <div id="tab-map" class="tab-content active">
+      <div class="map-container">
+        <div id="map"></div>
+        <div class="zoom-level-card">
+          <div class="zoom-title-row">
+            <span class="zoom-badge" id="zoom-status">ZOOM: 12</span>
+          </div>
+          <div class="zoom-desc" id="zoom-desc">10×10 km-es navigációs háló (középszintű tájékozódás)</div>
+        </div>
+      </div>
+      <div class="map-data-scroll">
+        
+        <div class="m-card">
+          <div class="m-card-title">
+            <span><i class="fa-solid fa-barcode"></i> MGRS Rácsdekóder</span>
+            <span style="font-size:0.65rem; color:var(--text-muted);">Valós pozíció</span>
+          </div>
+          <div class="decoder-strip">
+            <div class="dec-part dec-zone"><span id="dec-gzd">34T</span><span class="dec-label">Zóna</span></div>
+            <div class="dec-part dec-sq"><span id="dec-sq">CT</span><span class="dec-label">100km</span></div>
+            <div class="dec-part dec-east"><span id="dec-east">35261</span><span class="dec-label">Keletre (X)</span></div>
+            <div class="dec-part dec-north"><span id="dec-north">89745</span><span class="dec-label">Északra (Y)</span></div>
+          </div>
+          <div style="font-size:0.75rem; color:var(--text-muted); margin-top:8px;">
+            <i class="fa-solid fa-arrow-turn-up" style="color:var(--accent-amber)"></i> Szabály: <strong>„Először be az ajtón (Kelet), aztán fel a lépcsőn (Észak)!”</strong>
+          </div>
+        </div>
+
+        <div class="radio-panel">
+          <div class="radio-title"><i class="fa-solid fa-tower-broadcast"></i> Rádióforgalom Szimulátor</div>
+          <div class="radio-variant">
+            <div class="radio-variant-label"><strong>❌ Földrajzi Fok (GPS)</strong><span>Hosszú & Bonyolult</span></div>
+            <div class="radio-text" id="radio-degrees">47.50723, 19.04561</div>
+            <div class="radio-text spoken" id="radio-degrees-spoken"></div>
+            <div class="radio-meta"><span>Hossz: <strong id="deg-chars">18</strong> betű</span><span>Adásidő: <strong id="deg-time">~7 s</strong></span></div>
+          </div>
+          <div class="radio-variant good">
+            <div class="radio-variant-label"><strong>✅ MGRS Katonai Rács</strong><span>Rövid & Biztonságos</span></div>
+            <div class="radio-text" id="radio-mgrs">34T CT 537 599</div>
+            <div class="radio-text spoken" id="radio-mgrs-spoken"></div>
+            <div class="radio-meta"><span>Hossz: <strong id="mgrs-chars">15</strong> betű</span><span>Adásidő: <strong id="mgrs-time">~5 s</strong></span></div>
+          </div>
+          <div class="radio-actions">
+            <button class="btn-radio" id="btn-listen-deg" onclick="speakRadioVariant('deg')"><i class="fa-solid fa-volume-high"></i> Fok Hallgatása</button>
+            <button class="btn-radio" id="btn-listen-mgrs" onclick="speakRadioVariant('mgrs')"><i class="fa-solid fa-volume-high"></i> MGRS Hallgatása</button>
+          </div>
+        </div>
+
+        <div class="m-card">
+          <div class="m-card-title"><span><i class="fa-solid fa-layer-group"></i> Pontossági Lépcsők</span></div>
+          <div class="precision-ladder" id="precisionLadder"></div>
+        </div>
+
+        <div class="m-card">
+          <div class="m-card-title"><span><i class="fa-solid fa-map-pin"></i> Gyors Ugrás & Zoom Teszt</span></div>
+          <div class="chip-scroll">
+            <button class="chip-btn" onclick="flyToLocation(47.5072, 19.0455, 14)">🏛️ Bp. Országház (1 km rács)</button>
+            <button class="chip-btn" onclick="flyToLocation(47.8727, 20.0083, 11)">⛰️ Kékestető (10 km rács)</button>
+            <button class="chip-btn" onclick="flyToLocation(46.9142, 17.8931, 8)">⛵ Balaton / Tihany (100 km rács)</button>
+            <button class="chip-btn" onclick="flyToLocation(47.1625, 19.5033, 5)">🇭🇺 Magyarország (Zónahatár 33/34)</button>
+          </div>
+        </div>
+
+        <div class="m-card">
+          <div class="m-card-title"><span><i class="fa-solid fa-compass"></i> Számított Koordináták</span></div>
+          <div class="coord-grid">
+            <div class="coord-item">
+              <div class="coord-item-label">Földrajzi Fok (WGS84)</div>
+              <div class="coord-item-val" id="disp-wgs">47.5072°, 19.0455°</div>
+            </div>
+            <div class="coord-item">
+              <div class="coord-item-label">UTM Méter Alapon</div>
+              <div class="coord-item-val" id="disp-utm">34N 352610m, 5263200m</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 2. VONÁS / MIL TÁVCSŐ SZIMULÁTOR -->
+    <div id="tab-reticle" class="tab-content">
+      <div class="reticle-screen">
+        <div>
+          <div class="scope-box">
+            <canvas id="reticle-canvas" width="600" height="600"></canvas>
+          </div>
+          <div style="font-size:0.75rem; color:var(--text-muted); text-align:center; margin-top:8px;">
+            👆 <strong>Célpont mozgatása:</strong> Húzd az egeret vagy az ujjad a képen a skálaosztásokra!
+          </div>
+        </div>
+
+        <div class="m-card">
+          <div class="m-card-title">
+            <span>🎯 Célpont & Optika Beállítás</span>
+            <span id="target-info-tag" style="color:var(--accent-amber); font-size:0.75rem;">M = 2.5 m</span>
+          </div>
+
+          <div class="system-selector-row">
+            <button class="sys-tab-btn active" id="btn-sys-nato" onclick="setAngleSystem('NATO')">NATO MIL (6400 vonás / kör)</button>
+            <button class="sys-tab-btn" id="btn-sys-warsaw" onclick="setAngleSystem('WARSAW')">Varsói Vonás (6000 vonás / kör)</button>
+          </div>
+
+          <div class="target-chips">
+            <button class="btn-target-m active" onclick="setTarget('truck', 2.5, 'Teherautó', this)"><i class="fa-solid fa-truck"></i> Teherautó (2.5m)</button>
+            <button class="btn-target-m" onclick="setTarget('tank', 2.8, 'Harckocsi', this)"><i class="fa-solid fa-shield-halved"></i> Harckocsi (2.8m)</button>
+            <button class="btn-target-m" onclick="setTarget('soldier', 1.8, 'Katona', this)"><i class="fa-solid fa-person-rifle"></i> Katona (1.8m)</button>
+            <button class="btn-target-m" onclick="setTarget('tree', 5.0, 'Fa / Vadles', this)"><i class="fa-solid fa-tree"></i> Fa / Les (5.0m)</button>
+            <button class="btn-target-m" onclick="setTarget('tower', 25.0, 'Templom', this)"><i class="fa-solid fa-gopuram"></i> Templom (25m)</button>
+          </div>
+
+          <div class="range-wrap" style="margin-top:14px;">
+            <div class="range-label">
+              <span>Szimulált távolság:</span>
+              <strong id="dist-display" style="color:var(--accent-cyan); font-family:'JetBrains Mono';">500 m</strong>
+            </div>
+            <input type="range" id="slider-dist" min="100" max="2000" step="25" value="500" oninput="updateDistance(this.value)">
+          </div>
+
+          <div class="formula-banner" style="margin-top:12px;">
+            <div style="font-size:0.7rem; color:var(--text-muted);">TÁVOLSÁGBECSLÉS EZREDSZABÁLLYAL:</div>
+            <div class="formula-math" id="live-calc">D = (2.5 × 1000) / 5.0 = 500 m</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. ELMÉLET & VETÜLET-SZEMLÉLTETŐ -->
+    <div id="tab-theory" class="tab-content">
+      <div class="theory-screen">
+        <div class="m-card">
+          <div class="m-card-title"><span><i class="fa-solid fa-earth-americas"></i> Miért van szükség UTM-re?</span></div>
+          <div class="p-canvas-box">
+            <canvas id="proj-canvas" width="600" height="340"></canvas>
+          </div>
+          <div class="anim-btn-row" style="margin-top:10px;">
+            <button class="btn-anim-m active" onclick="setAnimState('sphere', this)">1. Gömbi Föld</button>
+            <button class="btn-anim-m" onclick="setAnimState('flatten', this)">2. Narancshéj Kiterítés</button>
+            <button class="btn-anim-m" onclick="setAnimState('cylinder', this)">3. Érintő Henger</button>
+            <button class="btn-anim-m" onclick="setAnimState('zones', this)">4. 60 UTM Zóna</button>
+          </div>
+          <p id="anim-desc" style="font-size:0.8rem; color:var(--accent-cyan); margin-top:10px; line-height:1.5;">
+            A Föld gömbölyű: fokos koordinátákkal síkban nem lehet pontos távolságot mérni torzulás nélkül.
+          </p>
+        </div>
+
+        <div class="m-card">
+          <div class="m-card-title"><span>📖 Gyors Összefoglaló Diákoknak</span></div>
+          <ul style="font-size:0.8rem; color:#cbd5e1; padding-left:18px; line-height:1.7; display:flex; flex-direction:column; gap:6px;">
+            <li><strong>UTM (60 zóna):</strong> A Földet 6°-os függőleges szeletekre vágjuk, hogy a sík papíron méterben pontosan mérhessünk. Magyarország: <strong>33N és 34N</strong>.</li>
+            <li><strong>MGRS (Katonai Rács):</strong> A hosszú milliós számok helyett kétbetűs 100×100 km-es blokkokat használ (pl. <strong>34T CT</strong>), így rádión gyors és hibamentes.</li>
+            <li><strong>Vonás / Mil (Ezred):</strong> 1 mil = 1 méteres cél 1000 méterről. NATO: 6400 vonás / kör, Varsói Szerződés: 6000 vonás / kör.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. KVÍZ -->
+    <div id="tab-quiz" class="tab-content">
+      <div class="quiz-screen">
+        <div class="m-card" id="q1">
+          <span style="font-size:0.7rem; color:var(--accent-blue); font-weight:700;">1. KÉRDÉS // UTM ZÓNÁK</span>
+          <p style="font-size:0.9rem; font-weight:600; color:#fff; margin:6px 0;">Hány fok széles egyetlen UTM hosszúsági szelet?</p>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <button class="q-opt-m" onclick="answerQuiz(1, 0, false)">A) 15 fok (időzónák)</button>
+            <button class="q-opt-m" onclick="answerQuiz(1, 1, true)">B) 6 fok (60 zóna körben)</button>
+            <button class="q-opt-m" onclick="answerQuiz(1, 2, false)">C) 10 fok</button>
+          </div>
+          <div class="q-exp-m" id="exp-1"><strong>Helyes!</strong> 360° / 60 zóna = pontosan 6 fokos szeletek.</div>
+        </div>
+
+        <div class="m-card" id="q2">
+          <span style="font-size:0.7rem; color:var(--accent-blue); font-weight:700;">2. KÉRDÉS // VONÁSBECSLÉS</span>
+          <p style="font-size:0.9rem; font-weight:600; color:#fff; margin:6px 0;">Egy 2.5 m magas teherautó 5 mil a szálkereszten. Távolság?</p>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <button class="q-opt-m" onclick="answerQuiz(2, 0, false)">A) 250 méter</button>
+            <button class="q-opt-m" onclick="answerQuiz(2, 1, true)">B) 500 méter</button>
+            <button class="q-opt-m" onclick="answerQuiz(2, 2, false)">C) 1000 méter</button>
+          </div>
+          <div class="q-exp-m" id="exp-2"><strong>Helyes!</strong> D = (2.5 × 1000) / 5 = 500 méter.</div>
+        </div>
+
+        <div class="m-card" id="q3">
+          <span style="font-size:0.7rem; color:var(--accent-blue); font-weight:700;">3. KÉRDÉS // MGRS SZABÁLY</span>
+          <p style="font-size:0.9rem; font-weight:600; color:#fff; margin:6px 0;">Melyik a helyes koordináta-olvasási sorrend a rácson?</p>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <button class="q-opt-m" onclick="answerQuiz(3, 0, true)">A) Először Kelet (X), utána Észak (Y)</button>
+            <button class="q-opt-m" onclick="answerQuiz(3, 1, false)">B) Először Észak (Y), utána Kelet (X)</button>
+          </div>
+          <div class="q-exp-m" id="exp-3"><strong>Helyes!</strong> „Először be a házba (vízszintes), utána fel a lépcsőn (függőleges).”</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Mobil alsó navigációs sáv -->
+  <nav class="mobile-nav">
+    <button class="nav-item active" onclick="switchTab('tab-map', 0)"><i class="fa-solid fa-map-location-dot"></i><span>Térkép</span></button>
+    <button class="nav-item" onclick="switchTab('tab-reticle', 1)"><i class="fa-solid fa-crosshairs"></i><span>Mil Távcső</span></button>
+    <button class="nav-item" onclick="switchTab('tab-theory', 2)"><i class="fa-solid fa-earth-americas"></i><span>Vetület</span></button>
+    <button class="nav-item" onclick="switchTab('tab-quiz', 3)"><i class="fa-solid fa-clipboard-question"></i><span>Kvíz</span></button>
+  </nav>
+
+  <!-- Moduláris szkriptek meghatározott betöltési sorrendben -->
+  <script src="js/config.js"></script>
+  <script src="js/radio.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/reticle.js"></script>
+  <script src="js/projection.js"></script>
+  <script src="js/quiz.js"></script>
+  <script src="js/tabs.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
