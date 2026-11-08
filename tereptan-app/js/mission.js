@@ -11,7 +11,6 @@ let missionAttempts = 0;
 let missionAnswered = false;
 
 // Előre definiált magyarországi célpontok (MGRS kód + szélesség/hosszúság)
-// A koordináták valós, ismert helyek (Országház, Kékestető, stb.)
 const MISSION_TARGETS = [
   { name: 'Bp. Országház',  lat: 47.5072, lng: 19.0455, zoom: 14, hint: 'A Duna partján, a Parlament épülete.' },
   { name: 'Kékestető',      lat: 47.8727, lng: 20.0083, zoom: 14, hint: 'Magyarország legmagasabb pontja, Mátra.' },
@@ -28,8 +27,13 @@ const MISSION_TARGETS = [
 function initMissionModule() {
   const mapContainer = document.getElementById('mission-map');
   if (!mapContainer) return;
+  
+  // Ha már létezik, ne hozzuk létre újra
+  if (missionMap) {
+    missionMap.invalidateSize();
+    return;
+  }
 
-  // Saját térkép a küldetés fülhöz
   missionMap = L.map('mission-map', {
     zoomControl: true,
     attributionControl: false,
@@ -37,29 +41,23 @@ function initMissionModule() {
     maxZoom: 18
   }).setView([47.5, 19.0], 7);
 
-  // Ugyanaz a térkép-szolgáltató, mint a fő térképnél
   const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 });
   osm.addTo(missionMap);
 
-  // Kattintás esemény
   missionMap.on('click', onMissionMapClick);
 
-  // Statisztika inicializálása
   updateMissionStats();
-
-  // Első küldetés indítása
   startNewMission();
 }
 
 // Kattintás a térképre
-function onMissionMapClick(e) {
+function onMissionMapClick(evt) {
   if (missionAnswered || !missionCurrentTarget) return;
 
   missionAttempts++;
-  const lat = e.latlng.lat;
-  const lng = e.latlng.lng;
+  const lat = evt.latlng.lat;
+  const lng = evt.latlng.lng;
 
-  // Felhasználó MGRS kódja
   let userCode;
   try {
     userCode = mgrs.forward([lng, lat]);
@@ -68,13 +66,10 @@ function onMissionMapClick(e) {
     return;
   }
 
-  // Cél MGRS kódja
   const targetCode = mgrs.forward([missionCurrentTarget.lng, missionCurrentTarget.lat]);
-
-  // Távolság számítása (méterben)
   const dist = distanceMeters(lat, lng, missionCurrentTarget.lat, missionCurrentTarget.lng);
 
-  // A zöld jelölő áthelyezése a kattintás helyére
+  // Zöld jelölő a kattintás helyére
   if (missionMarker) {
     missionMap.removeLayer(missionMarker);
   }
@@ -87,39 +82,39 @@ function onMissionMapClick(e) {
     })
   }).addTo(missionMap);
 
-  // Értékelés
+  // Felhasználó MGRS komponensei (JAVÍTOTT változónevek)
   const gzd = userCode.substring(0, 3);
   const sq = userCode.substring(3, 5);
   const rem = userCode.substring(5);
   const half = rem.length / 2;
-  const e = rem.substring(0, half);
-  const n = rem.substring(half);
+  const userE = rem.substring(0, half);
+  const userN = rem.substring(half);
 
-  // 100 m-es pontosságú összehasonlítás (a cél 6 jegyű kódja)
+  // Cél MGRS komponensei
+  const targetGzd = targetCode.substring(0, 3);
+  const targetSq = targetCode.substring(3, 5);
   const targetRem = targetCode.substring(5);
   const targetHalf = targetRem.length / 2;
   const targetE = targetRem.substring(0, targetHalf);
   const targetN = targetRem.substring(targetHalf);
 
-  const eMatch = e.substring(0, 3) === targetE.substring(0, 3);
-  const nMatch = n.substring(0, 3) === targetN.substring(0, 3);
-  const sqMatch = sq === targetCode.substring(3, 5);
+  const eMatch = userE.substring(0, 3) === targetE.substring(0, 3);
+  const nMatch = userN.substring(0, 3) === targetN.substring(0, 3);
+  const sqMatch = sq === targetSq;
 
   if (sqMatch && eMatch && nMatch) {
-    // TALÁLT!
     missionAnswered = true;
     missionCorrect++;
     updateMissionStats();
     showMissionFeedback(
       true,
       '✅ Talált!',
-      `Ez a(z) <strong>${gzd} ${sq} ${e.substring(0,3)} ${n.substring(0,3)}</strong> pont.<br>Kattints a "Következő küldetés" gombra!`
+      `Ez a(z) <strong>${gzd} ${sq} ${userE.substring(0,3)} ${userN.substring(0,3)}</strong> pont.<br>Kattints a "Következő küldetés" gombra!`
     );
     document.getElementById('btn-mission-next').style.display = 'flex';
   } else {
-    // NEM TALÁLT
     const direction = getCompassDirection(missionCurrentTarget.lat, missionCurrentTarget.lng, lat, lng);
-    let detail = `A kattintásod: <strong>${gzd} ${sq} ${e.substring(0,3)} ${n.substring(0,3)}</strong><br>`;
+    let detail = `A kattintásod: <strong>${gzd} ${sq} ${userE.substring(0,3)} ${userN.substring(0,3)}</strong><br>`;
     if (dist > 1000) {
       detail += `Kb. <strong>${(dist / 1000).toFixed(1)} km</strong>-rel vagy a céltól <strong>${direction}</strong> irányban.`;
     } else {
@@ -129,7 +124,6 @@ function onMissionMapClick(e) {
   }
 }
 
-// Két pont távolsága méterben (Haversine)
 function distanceMeters(lat1, lng1, lat2, lng2) {
   const R = 6371000;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -141,7 +135,6 @@ function distanceMeters(lat1, lng1, lat2, lng2) {
   return R * c;
 }
 
-// Irány kiszámítása (É, ÉK, K, ...)
 function getCompassDirection(targetLat, targetLng, userLat, userLng) {
   const dLng = userLng - targetLng;
   const dLat = userLat - targetLat;
@@ -151,7 +144,6 @@ function getCompassDirection(targetLat, targetLng, userLat, userLng) {
   return dirs[idx];
 }
 
-// Visszajelzés megjelenítése
 function showMissionFeedback(success, title, detail) {
   const fb = document.getElementById('mission-feedback');
   fb.style.display = 'block';
@@ -160,7 +152,6 @@ function showMissionFeedback(success, title, detail) {
   document.getElementById('mission-feedback-detail').innerHTML = detail;
 }
 
-// Statisztika frissítése
 function updateMissionStats() {
   document.getElementById('score-correct').innerText = missionCorrect;
   document.getElementById('score-attempts').innerText = missionAttempts;
@@ -171,19 +162,15 @@ function updateMissionStats() {
   document.getElementById('mission-stats').innerText = `${missionCorrect} / ${missionAttempts}`;
 }
 
-// Új küldetés indítása
 function startNewMission() {
-  // Véletlenszerű célpont
   missionCurrentTarget = MISSION_TARGETS[Math.floor(Math.random() * MISSION_TARGETS.length)];
-
-  // Állapot visszaállítása
   missionAnswered = false;
+
   const nextBtn = document.getElementById('btn-mission-next');
   if (nextBtn) nextBtn.style.display = 'none';
   const fb = document.getElementById('mission-feedback');
   if (fb) fb.style.display = 'none';
 
-  // Cél MGRS kódja (100 m-es pontossággal)
   let targetCode;
   try {
     targetCode = mgrs.forward([missionCurrentTarget.lng, missionCurrentTarget.lat]);
@@ -192,35 +179,35 @@ function startNewMission() {
     return;
   }
 
-  // 100 m-es pontosságú kód: zóna (3) + blokk (2) + 3+3 jegy
   const gzd = targetCode.substring(0, 3);
   const sq = targetCode.substring(3, 5);
   const rem = targetCode.substring(5);
   const half = rem.length / 2;
-  const e = rem.substring(0, half).substring(0, 3);
-  const n = rem.substring(half).substring(0, 3);
+  const eStr = rem.substring(0, half).substring(0, 3);
+  const nStr = rem.substring(half).substring(0, 3);
 
-  const displayCode = `${gzd} ${sq} ${e} ${n}`;
+  const displayCode = `${gzd} ${sq} ${eStr} ${nStr}`;
 
-  // Cél kódjának megjelenítése
   document.getElementById('mission-target-code').innerText = displayCode;
   document.getElementById('mission-target-hint').innerHTML =
     `<i class="fa-solid fa-lightbulb"></i><span>${missionCurrentTarget.hint}</span>`;
 
-  // Térkép mozgatása - CSAK ha már létezik
   if (missionMap) {
     missionMap.setView([47.5, 19.0], 7);
-    // Ha volt jelölő, eltávolítjuk
     if (missionMarker) {
       missionMap.removeLayer(missionMarker);
       missionMarker = null;
     }
   }
 }
-// Segítség gomb
+
+function nextMission() {
+  startNewMission();
+}
+
 function showMissionHint() {
   if (!missionCurrentTarget) return;
-  // A cél környékére mozgatjuk a térképet (de nem pontosan a célra)
+  if (!missionMap) return;
   const offsetLat = missionCurrentTarget.lat + (Math.random() - 0.5) * 0.1;
   const offsetLng = missionCurrentTarget.lng + (Math.random() - 0.5) * 0.1;
   missionMap.setView([offsetLat, offsetLng], 11);
