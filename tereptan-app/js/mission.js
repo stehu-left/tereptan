@@ -11,9 +11,11 @@ let missionCorrect = 0;
 let missionAttempts = 0;
 let missionAnswered = false;
 let missionBlockRect = null;
+let missionBlockShown = false;
 
-// Pontossági szint: 3 = 1 km, 4 = 100 m, 5 = 10 m
-const MISSION_ACCURACY = 3;
+// Pontossági szint: 3 = 1 km, 4 = 100 m, 5 = 10 m, 6 = 1 m
+// 5 = 1 méter pontosság (a legszigorúbb, katonai szabvány)
+const MISSION_ACCURACY = 5;
 
 // Előre definiált magyarországi célpontok
 const MISSION_TARGETS = [
@@ -48,7 +50,6 @@ function initMissionModule() {
   const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 });
   osm.addTo(missionMap);
 
-  // ÚJ: MGRS rács a küldetés térképen is (ugyanaz, mint a fő térképen)
   missionGridLayer = L.layerGroup().addTo(missionMap);
   missionMap.on('zoomend moveend', drawMissionGrid);
   drawMissionGrid();
@@ -59,7 +60,6 @@ function initMissionModule() {
   startNewMission();
 }
 
-// MGRS rács kirajzolása a küldetés térképre
 function drawMissionGrid() {
   if (!missionGridLayer || !missionMap) return;
   missionGridLayer.clearLayers();
@@ -67,7 +67,7 @@ function drawMissionGrid() {
   const zoom = missionMap.getZoom();
   const bounds = missionMap.getBounds();
 
-  // A célblokk kiemelése (ha van)
+  // A célblokk kiemelése, ha a diák kérte
   if (missionBlockRect) {
     missionMap.removeLayer(missionBlockRect);
     missionBlockRect = null;
@@ -83,13 +83,12 @@ function drawMissionGrid() {
     drawMissionBlocks(bounds, 1000, '1k');
   }
 
-  // Ha van célblokk, azt kiemeljük
-  if (missionCurrentTarget) {
+  // Ha a diák kérte a segítséget, újra kiemeljük a célblokkot
+  if (missionBlockShown && missionCurrentTarget) {
     highlightTargetBlock();
   }
 }
 
-// Zóna szint
 function drawMissionGZD(b) {
   const minLng = Math.floor(b.getWest() / 6) * 6;
   const maxLng = Math.ceil(b.getEast() / 6) * 6;
@@ -122,7 +121,6 @@ function drawMissionGZD(b) {
   }
 }
 
-// 100 km / 10 km / 1 km rács (egyszerűsített, mert a fő map.js-ben már van)
 function drawMissionBlocks(bounds, stepMeters, type) {
   const minZone = Math.max(1, Math.floor((bounds.getWest() + 180) / 6) + 1);
   const maxZone = Math.min(60, Math.floor((bounds.getEast() + 180) / 6) + 1);
@@ -201,9 +199,15 @@ function drawMissionBlocks(bounds, stepMeters, type) {
   }
 }
 
-// A cél 100 km-es blokkjának kiemelése narancssárga téglalappal
+// A cél 100 km-es blokkjának kiemelése (csak ha a diák kérte)
 function highlightTargetBlock() {
   if (!missionCurrentTarget || !missionMap) return;
+
+  // Ha már van, ne rajzoljuk újra
+  if (missionBlockRect) {
+    missionMap.removeLayer(missionBlockRect);
+    missionBlockRect = null;
+  }
 
   const targetCode = mgrs.forward([missionCurrentTarget.lng, missionCurrentTarget.lat]);
   const zone = parseInt(targetCode.substring(0, 2), 10);
@@ -213,7 +217,6 @@ function highlightTargetBlock() {
   const blockE = Math.floor(coords[0] / 100000) * 100000;
   const blockN = Math.floor(coords[1] / 100000) * 100000;
 
-  // A 100 km-es blokk négy sarka
   const sw = proj4(utmProj, 'EPSG:4326', [blockE, blockN]);
   const se = proj4(utmProj, 'EPSG:4326', [blockE + 100000, blockN]);
   const ne = proj4(utmProj, 'EPSG:4326', [blockE + 100000, blockN + 100000]);
@@ -230,7 +233,6 @@ function highlightTargetBlock() {
   ).addTo(missionMap);
 }
 
-// Kattintás a térképre
 function onMissionMapClick(evt) {
   if (missionAnswered || !missionCurrentTarget) return;
 
@@ -347,11 +349,22 @@ function updateMissionStats() {
 function startNewMission() {
   missionCurrentTarget = MISSION_TARGETS[Math.floor(Math.random() * MISSION_TARGETS.length)];
   missionAnswered = false;
+  missionBlockShown = false;
 
   const nextBtn = document.getElementById('btn-mission-next');
   if (nextBtn) nextBtn.style.display = 'none';
   const fb = document.getElementById('mission-feedback');
   if (fb) fb.style.display = 'none';
+
+  // Töröljük az előző markert és blokkot
+  if (missionMarker && missionMap) {
+    missionMap.removeLayer(missionMarker);
+    missionMarker = null;
+  }
+  if (missionBlockRect && missionMap) {
+    missionMap.removeLayer(missionBlockRect);
+    missionBlockRect = null;
+  }
 
   let targetCode;
   try {
@@ -375,20 +388,7 @@ function startNewMission() {
     `<i class="fa-solid fa-lightbulb"></i><span>${missionCurrentTarget.hint}</span>`;
 
   if (missionMap) {
-    // Először a célzónára mozgatunk (hogy látszódjék a blokk)
     missionMap.setView([47.0, 19.5], 7);
-
-    // Töröljük az előző markert
-    if (missionMarker) {
-      missionMap.removeLayer(missionMarker);
-      missionMarker = null;
-    }
-
-    // Kiemeljük a célblokkot (de nem a pontos helyet!)
-    if (missionBlockRect) {
-      missionMap.removeLayer(missionBlockRect);
-      missionBlockRect = null;
-    }
     setTimeout(() => {
       drawMissionGrid();
     }, 300);
@@ -402,17 +402,15 @@ function nextMission() {
 function showMissionHint() {
   if (!missionCurrentTarget || !missionMap) return;
 
-  // A cél környékére mozgatjuk a térképet
+  missionBlockShown = true;
   const offsetLat = missionCurrentTarget.lat + (Math.random() - 0.5) * 0.1;
   const offsetLng = missionCurrentTarget.lng + (Math.random() - 0.5) * 0.1;
   missionMap.setView([offsetLat, offsetLng], 10);
 
-  // Kiemeljük a célblokkot
   setTimeout(() => {
     highlightTargetBlock();
   }, 400);
 
-  // Visszajelzés
   showMissionFeedback(
     true,
     '💡 Segítség',
