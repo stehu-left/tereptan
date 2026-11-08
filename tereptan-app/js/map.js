@@ -107,7 +107,6 @@ function drawGZDLevel(b) {
 }
 
 function drawMetricMGRSGrid(bounds, stepMeters, type) {
-  // Megállapítjuk az érintett zónákat a látható területből
   const minZone = Math.max(1, Math.floor((bounds.getWest() + 180) / 6) + 1);
   const maxZone = Math.min(60, Math.floor((bounds.getEast() + 180) / 6) + 1);
 
@@ -130,7 +129,6 @@ function drawMetricMGRSGrid(bounds, stepMeters, type) {
     const south = Math.max(-80, bSouth - latSpan * 0.1);
     const north = Math.min(84, bNorth + latSpan * 0.1);
 
-    // Képernyő sarokpontjainak konvertálása méterre
     const swM = proj4('EPSG:4326', utmProj, [west, south]);
     const seM = proj4('EPSG:4326', utmProj, [east, south]);
     const nwM = proj4('EPSG:4326', utmProj, [west, north]);
@@ -147,21 +145,28 @@ function drawMetricMGRSGrid(bounds, stepMeters, type) {
           ? { color: '#f59e0b', weight: 1.2, opacity: 0.5, dashArray: '4, 4' }
           : { color: '#ef4444', weight: 1.2, opacity: 0.55 });
 
-    // 1. FÜGGŐLEGES (EASTING) RÁCSVONALAK
+    // Rögzítési pontok a képernyő szélén (kicsit beljebb)
+    const topEdgeLat = bNorth - latSpan * 0.04;
+    const leftEdgeLng = bWest + lngSpan * 0.04;
+
+    // 1. FÜGGŐLEGES (EASTING) VONALAK ÉS FELSŐ CÍMKÉK
     for (let e = minE; e <= maxE; e += stepMeters) {
       const pS = proj4(utmProj, 'EPSG:4326', [e, minN]);
       const pN = proj4(utmProj, 'EPSG:4326', [e, maxN]);
 
       L.polyline([[pS[1], pS[0]], [pN[1], pN[0]]], lineStyle).addTo(dynamicGridLayer);
 
-      // 1 km felirat: közvetlenül a látható felső szegély alá rajzoljuk
       if (type === '1k') {
-        const topLat = bNorth - latSpan * 0.04;
-        const topGeo = proj4(utmProj, 'EPSG:4326', [e, proj4('EPSG:4326', utmProj, [pS[0], topLat])[1]]);
+        // A vonal metszéspontja a képernyő felső szélével:
+        // A topEdgeLat szélességnél keressük a vonal hosszúságát.
+        // Ehhez a képernyő jobb szélét (bEast) használjuk referencia hosszúságnak,
+        // majd az így kapott UTM Northing-ot párosítjuk az 'e' Easting-gal.
+        const refNorthing = proj4('EPSG:4326', utmProj, [bEast, topEdgeLat])[1];
+        const labelPoint = proj4(utmProj, 'EPSG:4326', [e, refNorthing]);
 
-        if (topGeo[0] >= bWest && topGeo[0] <= bEast) {
+        if (labelPoint[0] >= bWest && labelPoint[0] <= bEast) {
           const kmNum = String(Math.floor((e % 100000) / 1000)).padStart(2, '0');
-          L.marker([topLat, topGeo[0]], {
+          L.marker([topEdgeLat, labelPoint[0]], {
             icon: L.divIcon({
               className: 'grid-label-1k',
               html: kmNum,
@@ -174,21 +179,24 @@ function drawMetricMGRSGrid(bounds, stepMeters, type) {
       }
     }
 
-    // 2. VÍZSZINTES (NORTHING) RÁCSVONALAK
+    // 2. VÍZSZINTES (NORTHING) VONALAK ÉS BAL OLDALI CÍMKÉK
     for (let n = minN; n <= maxN; n += stepMeters) {
       const pW = proj4(utmProj, 'EPSG:4326', [minE, n]);
       const pE = proj4(utmProj, 'EPSG:4326', [maxE, n]);
 
       L.polyline([[pW[1], pW[0]], [pE[1], pE[0]]], lineStyle).addTo(dynamicGridLayer);
 
-      // 1 km felirat: közvetlenül a látható bal szegély mellé rajzoljuk
       if (type === '1k') {
-        const leftLng = bWest + lngSpan * 0.04;
-        const leftGeo = proj4(utmProj, 'EPSG:4326', [proj4('EPSG:4326', utmProj, [leftLng, pW[1]])[0], n]);
+        // A vonal metszéspontja a képernyő bal szélével:
+        // A leftEdgeLng hosszúságnál keressük a vonal szélességét.
+        // Ehhez a képernyő felső szélét (bNorth) használjuk referencia szélességnek,
+        // majd az így kapott UTM Easting-ot párosítjuk az 'n' Northing-gal.
+        const refEasting = proj4('EPSG:4326', utmProj, [leftEdgeLng, bNorth])[0];
+        const labelPoint = proj4(utmProj, 'EPSG:4326', [refEasting, n]);
 
-        if (leftGeo[1] >= bSouth && leftGeo[1] <= bNorth) {
+        if (labelPoint[1] >= bSouth && labelPoint[1] <= bNorth) {
           const kmNum = String(Math.floor((n % 100000) / 1000)).padStart(2, '0');
-          L.marker([leftGeo[1], leftLng], {
+          L.marker([labelPoint[1], leftEdgeLng], {
             icon: L.divIcon({
               className: 'grid-label-1k',
               html: kmNum,
